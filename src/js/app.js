@@ -8,6 +8,8 @@ class CollatzApp {
         this.nValue = 3;
         this.mValue = 1;
         this.shortcut = false;
+        this.rebuildTimeout = null;
+        this.currentLayout = 'dagre'; // Track current layout
         this.init();
     }
 
@@ -134,35 +136,37 @@ class CollatzApp {
         const nValue = document.getElementById('n-value');
         const mValue = document.getElementById('m-value');
         const shortcut = document.getElementById('shortcut');
-        const rebuildBtn = document.getElementById('rebuild-graph');
         
-        console.log('Elements found:', { modulo, nValue, mValue, shortcut, rebuildBtn });
+        console.log('Elements found:', { modulo, nValue, mValue, shortcut });
         
-        if (!modulo || !nValue || !mValue || !shortcut || !rebuildBtn) {
+        if (!modulo || !nValue || !mValue || !shortcut) {
             console.error('Some required elements not found!');
             return;
         }
         
-        // Input validation and updates
+        // Input validation and auto-rebuild on every change (with debouncing)
         modulo.addEventListener('input', (e) => {
-            this.validateAndUpdateModulo(e.target);
+            if (this.validateAndUpdateModulo(e.target)) {
+                this.debouncedRebuild();
+            }
         });
 
         nValue.addEventListener('input', (e) => {
-            this.validateAndUpdateN(e.target);
+            if (this.validateAndUpdateN(e.target)) {
+                this.debouncedRebuild();
+            }
         });
 
         mValue.addEventListener('input', (e) => {
-            this.validateAndUpdateM(e.target);
+            if (this.validateAndUpdateM(e.target)) {
+                this.debouncedRebuild();
+            }
         });
 
         shortcut.addEventListener('change', (e) => {
             this.shortcut = e.target.checked;
             this.updateRuleDisplay();
-        });
-
-        rebuildBtn.addEventListener('click', () => {
-            this.rebuildGraph();
+            this.debouncedRebuild();
         });
 
         // Export link button
@@ -180,6 +184,23 @@ class CollatzApp {
         this.validateAllInputs();
     }
 
+    debouncedRebuild() {
+        // Clear any existing timeout
+        if (this.rebuildTimeout) {
+            clearTimeout(this.rebuildTimeout);
+        }
+        
+        // Set new timeout for 500ms
+        this.rebuildTimeout = setTimeout(() => {
+            if (this.validateAllInputs()) {
+                console.log('Auto-rebuilding graph after parameter change...');
+                this.buildGraph(this.modulo, this.nValue, this.mValue, this.shortcut);
+                
+                // Layout is applied directly in buildGraph, no need for additional application
+            }
+        }, 500);
+    }
+
     bindLayoutButtons() {
         const layoutButtons = [
             { id: 'layout-dagre', layout: 'dagre' },
@@ -195,7 +216,7 @@ class CollatzApp {
             const btn = document.getElementById(id);
             if (btn) {
                 btn.addEventListener('click', () => {
-                    this.applyLayout(layout);
+                    this.applyLayout(layout, true);  // Always animate manual layout changes
                     this.setActiveLayoutButton(id);
                 });
             }
@@ -218,16 +239,16 @@ class CollatzApp {
         }
     }
 
-    applyLayout(layoutName) {
-        console.log(`Applying layout: ${layoutName} (animated)`);
+    applyLayout(layoutName, animated = true) {
+        console.log(`Applying layout: ${layoutName} (${animated ? 'animated' : 'immediate'})`);
         
         let layoutConfig = {
             name: layoutName,
             fit: true,
             padding: 30,
-            animate: true,
-            animationDuration: 1000,
-            animationEasing: 'ease-out'
+            animate: animated,
+            animationDuration: animated ? 1000 : 0,
+            animationEasing: animated ? 'ease-out' : 'none'
         };
 
         // Customize layout configurations
@@ -240,9 +261,9 @@ class CollatzApp {
                     spacingFactor: 1.2,
                     nodeSep: 50,
                     rankSep: 80,
-                    animate: true,
-                    animationDuration: 1000,
-                    animationEasing: 'ease-out'
+                    animate: animated,
+                    animationDuration: animated ? 1000 : 0,
+                    animationEasing: animated ? 'ease-out' : 'none'
                 };
                 break;
             
@@ -294,9 +315,9 @@ class CollatzApp {
                     initialTemp: 200,
                     coolingFactor: 0.95,
                     minTemp: 1.0,
-                    animate: 'end',  // Special animation mode for physics layouts
-                    animationDuration: 1000,
-                    animationEasing: 'ease-out'
+                    animate: animated ? 'end' : false,  // Special animation mode for physics layouts
+                    animationDuration: animated ? 1000 : 0,
+                    animationEasing: animated ? 'ease-out' : 'none'
                 };
                 break;
             
@@ -322,9 +343,9 @@ class CollatzApp {
 
         // Ensure all layouts have animation properties (except those that handle it specially)
         if (!layoutConfig.hasOwnProperty('animate')) {
-            layoutConfig.animate = true;
-            layoutConfig.animationDuration = 1000;
-            layoutConfig.animationEasing = 'ease-out';
+            layoutConfig.animate = animated;
+            layoutConfig.animationDuration = animated ? 1000 : 0;
+            layoutConfig.animationEasing = animated ? 'ease-out' : 'none';
         }
 
         this.cy.layout(layoutConfig).run();
@@ -491,7 +512,7 @@ class CollatzApp {
         console.log('URL parameters cleared');
     }
 
-    validateAndUpdateModulo(input) {
+    validateModulo(input) {
         const value = parseInt(input.value);
         const errorSpan = document.getElementById('modulo-error');
         
@@ -502,13 +523,21 @@ class CollatzApp {
         } else {
             input.classList.remove('invalid');
             errorSpan.textContent = '';
-            this.modulo = value;
-            this.updateRuleDisplay();
             return true;
         }
     }
 
-    validateAndUpdateN(input) {
+    validateAndUpdateModulo(input) {
+        const value = parseInt(input.value);
+        const isValid = this.validateModulo(input);
+        if (isValid) {
+            this.modulo = value;
+            this.updateRuleDisplay();
+        }
+        return isValid;
+    }
+
+    validateN(input) {
         const value = parseInt(input.value);
         const errorSpan = document.getElementById('n-error');
         
@@ -519,13 +548,21 @@ class CollatzApp {
         } else {
             input.classList.remove('invalid');
             errorSpan.textContent = '';
-            this.nValue = value;
-            this.updateRuleDisplay();
             return true;
         }
     }
 
-    validateAndUpdateM(input) {
+    validateAndUpdateN(input) {
+        const value = parseInt(input.value);
+        const isValid = this.validateN(input);
+        if (isValid) {
+            this.nValue = value;
+            this.updateRuleDisplay();
+        }
+        return isValid;
+    }
+
+    validateM(input) {
         const value = parseInt(input.value);
         const errorSpan = document.getElementById('m-error');
         
@@ -536,10 +573,18 @@ class CollatzApp {
         } else {
             input.classList.remove('invalid');
             errorSpan.textContent = '';
-            this.mValue = value;
-            this.updateRuleDisplay();
             return true;
         }
+    }
+
+    validateAndUpdateM(input) {
+        const value = parseInt(input.value);
+        const isValid = this.validateM(input);
+        if (isValid) {
+            this.mValue = value;
+            this.updateRuleDisplay();
+        }
+        return isValid;
     }
 
     validateAllInputs() {
@@ -721,7 +766,7 @@ class CollatzApp {
         
         // Only run layout if no positions are provided (i.e., not loading from URL)
         if (!positions) {
-            this.runLayout();
+            this.applyLayout(this.currentLayout, false);  // Use current layout without animation
         }
     }
 
@@ -807,7 +852,7 @@ class CollatzApp {
         }
 
         this.cy.add([...nodes, ...edges]);
-        this.runLayout();
+        this.applyLayout('dagre', false);  // Use dagre layout without animation for legacy method
     }
 
     getTransitionLabel(from, to, nValue = 3, mValue = 1, shortcut = false) {
@@ -822,7 +867,7 @@ class CollatzApp {
         }
     }
 
-    runLayout() {
+    runLayout(animated = true) {
         this.cy.layout({
             name: 'dagre',
             rankDir: 'TB',
@@ -830,9 +875,9 @@ class CollatzApp {
             spacingFactor: 1.2,
             nodeSep: 50,
             rankSep: 80,
-            animate: true,
-            animationDuration: 1000,
-            animationEasing: 'ease-out'
+            animate: animated,
+            animationDuration: animated ? 1000 : 0,
+            animationEasing: animated ? 'ease-out' : 'none'
         }).run();
     }
 }
