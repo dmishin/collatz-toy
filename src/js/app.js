@@ -212,12 +212,15 @@ class CollatzApp {
     }
 
     applyLayout(layoutName) {
-        console.log(`Applying layout: ${layoutName}`);
+        console.log(`Applying layout: ${layoutName} (animated)`);
         
         let layoutConfig = {
             name: layoutName,
             fit: true,
-            padding: 30
+            padding: 30,
+            animate: true,
+            animationDuration: 1000,
+            animationEasing: 'ease-out'
         };
 
         // Customize layout configurations
@@ -229,7 +232,10 @@ class CollatzApp {
                     padding: 30,
                     spacingFactor: 1.2,
                     nodeSep: 50,
-                    rankSep: 80
+                    rankSep: 80,
+                    animate: true,
+                    animationDuration: 1000,
+                    animationEasing: 'ease-out'
                 };
                 break;
             
@@ -280,7 +286,10 @@ class CollatzApp {
                     numIter: 1000,
                     initialTemp: 200,
                     coolingFactor: 0.95,
-                    minTemp: 1.0
+                    minTemp: 1.0,
+                    animate: 'end',  // Special animation mode for physics layouts
+                    animationDuration: 1000,
+                    animationEasing: 'ease-out'
                 };
                 break;
             
@@ -302,6 +311,13 @@ class CollatzApp {
                     padding: 30
                 };
                 break;
+        }
+
+        // Ensure all layouts have animation properties (except those that handle it specially)
+        if (!layoutConfig.hasOwnProperty('animate')) {
+            layoutConfig.animate = true;
+            layoutConfig.animationDuration = 1000;
+            layoutConfig.animationEasing = 'ease-out';
         }
 
         this.cy.layout(layoutConfig).run();
@@ -802,7 +818,10 @@ class CollatzApp {
             padding: 30,
             spacingFactor: 1.2,
             nodeSep: 50,
-            rankSep: 80
+            rankSep: 80,
+            animate: true,
+            animationDuration: 1000,
+            animationEasing: 'ease-out'
         }).run();
     }
 }
