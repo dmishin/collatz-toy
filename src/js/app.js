@@ -171,7 +171,7 @@ class CollatzApp {
         shortcut.addEventListener('change', (e) => {
             this.shortcut = e.target.checked;
             this.updateRuleDisplay();
-            this.debouncedRebuild();
+            this.debouncedRebuildPreserveLayout();
         });
 
         // Export link button
@@ -202,6 +202,33 @@ class CollatzApp {
                 this.buildGraph(this.modulo, this.nValue, this.mValue, this.shortcut);
                 
                 // Layout is applied directly in buildGraph, no need for additional application
+            }
+        }, 500);
+    }
+
+    debouncedRebuildPreserveLayout() {
+        // Clear any existing timeout
+        if (this.rebuildTimeout) {
+            clearTimeout(this.rebuildTimeout);
+        }
+        
+        // Set new timeout for 500ms
+        this.rebuildTimeout = setTimeout(() => {
+            if (this.validateAllInputs()) {
+                console.log('Auto-rebuilding graph with preserved layout...');
+                
+                // Store current node positions
+                const positions = {};
+                this.cy.nodes().forEach(node => {
+                    const pos = node.position();
+                    positions[node.id()] = { x: pos.x, y: pos.y };
+                });
+                
+                // Rebuild graph
+                this.buildGraph(this.modulo, this.nValue, this.mValue, this.shortcut, positions);
+                
+                // Restore positions immediately
+                this.restoreNodePositions(positions);
             }
         }, 500);
     }
