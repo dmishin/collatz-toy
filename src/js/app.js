@@ -13,6 +13,11 @@ class CollatzApp {
         this.init();
     }
 
+    // Mathematical modulo that always returns positive result in [0, b-1]
+    mod(a, b) {
+        return ((a % b) + b) % b;
+    }
+
     init() {
         cytoscape.use(dagre);
         this.initCytoscape();
@@ -711,22 +716,22 @@ class CollatzApp {
             
             if (i % 2 === 0) {
                 // Even i: j = i/2
-                j = Math.floor(i / 2) % P;
+                j = this.mod(Math.floor(i / 2), P);
                 label = 'x/2';
             } else {
                 // Odd i: depends on shortcut
                 if (shortcut) {
                     // j = (N*i + M)/2 % P
-                    j = Math.floor((N * i + M) / 2) % P;
+                    j = this.mod(Math.floor((N * i + M) / 2), P);
                     label = `(${N}x+${M})/2`;
                 } else {
                     // j = (N*i + M) % P
-                    j = (N * i + M) % P;
+                    j = this.mod(N * i + M, P);
                     label = `${N}x+${M}`;
                 }
             }
 
-            const sourceNode = i % P;  // Source node is i mod P
+            const sourceNode = this.mod(i, P);  // Source node is i mod P
             const targetNode = j;      // Target node is calculated j
             
             // Create unique key for this edge (source-target-label)
