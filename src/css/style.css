@@ -253,7 +253,7 @@ button#clear-graph:hover {
 
 /* Custom node styles for modular arithmetic visualization */
 .node-grey {
-    background-color: #888 !important;
+    background-color: #bbb !important;
     border-color: #000 !important;
     color: #000 !important;
     border-width: 2px !important;

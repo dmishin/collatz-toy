@@ -64,7 +64,14 @@ class CollatzApp {
                         'label': 'data(label)',
                         'color': '#666',
                         'font-size': '10px',
-                        'text-rotation': 'autorotate'
+                        'text-rotation': 'autorotate',
+                        'text-margin-y': '-10px'
+                    }
+                },
+                {
+                    selector: 'edge.dashed',
+                    style: {
+                        'line-style': 'dashed'
                     }
                 },
                 {
@@ -84,7 +91,7 @@ class CollatzApp {
                 {
                     selector: 'node.node-grey',
                     style: {
-                        'background-color': '#888',
+                        'background-color': '#bbb',
                         'border-color': '#000',
                         'color': '#000',
                         'border-width': '2px'
@@ -686,6 +693,9 @@ class CollatzApp {
             if (!existingEdges.has(edgeKey)) {
                 existingEdges.add(edgeKey);
                 
+                // Add dashed class for x/2 edges
+                const edgeClasses = label === 'x/2' ? 'dashed' : '';
+                
                 edges.push({
                     group: 'edges',
                     data: {
@@ -693,7 +703,8 @@ class CollatzApp {
                         source: `n${sourceNode}`,
                         target: `n${targetNode}`,
                         label: label
-                    }
+                    },
+                    classes: edgeClasses
                 });
                 console.log(`  ✓ Added edge`);
             } else {
