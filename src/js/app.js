@@ -17,8 +17,17 @@ class CollatzApp {
         this.bindEvents();
         this.updateRuleDisplay();
         
-        // Build graph automatically on page load
-        this.buildGraph(this.modulo, this.nValue, this.mValue, this.shortcut);
+        // Check if there are URL parameters before building initial graph
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasGraphData = urlParams.get('graph');
+        
+        if (hasGraphData) {
+            // Load from URL parameters - this will build the graph
+            this.loadFromUrl();
+        } else {
+            // Build graph automatically on page load with default parameters
+            this.buildGraph(this.modulo, this.nValue, this.mValue, this.shortcut);
+        }
     }
 
     initCytoscape() {
@@ -148,6 +157,14 @@ class CollatzApp {
         rebuildBtn.addEventListener('click', () => {
             this.rebuildGraph();
         });
+
+        // Export link button
+        const exportBtn = document.getElementById('export-link');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                this.exportLink();
+            });
+        }
 
         // Layout button event listeners
         this.bindLayoutButtons();
@@ -290,6 +307,167 @@ class CollatzApp {
         this.cy.layout(layoutConfig).run();
     }
 
+    exportLink() {
+        console.log('Exporting current graph state...');
+        
+        // Get current parameters
+        const params = {
+            P: this.modulo,
+            N: this.nValue,
+            M: this.mValue,
+            shortcut: this.shortcut
+        };
+        
+        // Get node positions
+        const positions = {};
+        this.cy.nodes().forEach(node => {
+            const pos = node.position();
+            positions[node.id()] = {
+                x: Math.round(pos.x * 100) / 100, // Round to 2 decimal places
+                y: Math.round(pos.y * 100) / 100
+            };
+        });
+        
+        // Create export data
+        const exportData = {
+            ...params,
+            positions: positions
+        };
+        
+        // Encode to URL parameter
+        const encodedData = btoa(JSON.stringify(exportData));
+        const currentUrl = new URL(window.location);
+        currentUrl.searchParams.set('graph', encodedData);
+        
+        const exportUrl = currentUrl.toString();
+        console.log('Export URL:', exportUrl);
+        
+        // Copy to clipboard
+        this.copyToClipboard(exportUrl);
+    }
+
+    async copyToClipboard(text) {
+        try {
+            await navigator.clipboard.writeText(text);
+            this.showNotification('Link copied to clipboard!', 'success');
+        } catch (err) {
+            console.error('Failed to copy to clipboard:', err);
+            
+            // Fallback: show the URL in a prompt
+            prompt('Copy this URL:', text);
+        }
+    }
+
+    showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: ${type === 'success' ? '#28a745' : '#667eea'};
+            color: white;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            font-size: 0.9rem;
+            font-weight: 500;
+        `;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 3000);
+    }
+
+    loadFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const graphData = urlParams.get('graph');
+        
+        if (!graphData) {
+            return false; // No saved state found
+        }
+        
+        try {
+            const decoded = atob(graphData);
+            const data = JSON.parse(decoded);
+            
+            console.log('Loading graph state from URL:', data);
+            
+            // Restore parameters
+            if (data.P !== undefined) {
+                this.modulo = data.P;
+                document.getElementById('modulo').value = data.P;
+            }
+            if (data.N !== undefined) {
+                this.nValue = data.N;
+                document.getElementById('n-value').value = data.N;
+            }
+            if (data.M !== undefined) {
+                this.mValue = data.M;
+                document.getElementById('m-value').value = data.M;
+            }
+            if (data.shortcut !== undefined) {
+                this.shortcut = data.shortcut;
+                document.getElementById('shortcut').checked = data.shortcut;
+            }
+            
+            // Update rule display
+            this.updateRuleDisplay();
+            
+            // Rebuild graph with new parameters, but skip automatic layout if we have positions
+            this.buildGraph(this.modulo, this.nValue, this.mValue, this.shortcut, data.positions);
+            
+            // Restore node positions immediately after graph is built
+            if (data.positions) {
+                this.restoreNodePositions(data.positions);
+            }
+            
+            this.showNotification('Graph loaded from URL!', 'success');
+            
+            // Clear URL parameters after successful load
+            this.clearUrlParameters();
+            
+            return true;
+        } catch (err) {
+            console.error('Failed to load graph from URL:', err);
+            this.showNotification('Failed to load graph from URL', 'error');
+            return false;
+        }
+    }
+
+    restoreNodePositions(positions) {
+        console.log('Restoring node positions:', positions);
+        
+        Object.keys(positions).forEach(nodeId => {
+            const node = this.cy.getElementById(nodeId);
+            if (node.length > 0) {
+                const pos = positions[nodeId];
+                node.position({ x: pos.x, y: pos.y });
+            }
+        });
+        
+        // Fit the graph to show all nodes
+        this.cy.fit();
+    }
+
+    clearUrlParameters() {
+        // Create clean URL without parameters
+        const cleanUrl = new URL(window.location);
+        cleanUrl.searchParams.delete('graph');
+        
+        // Update browser URL without page reload
+        window.history.replaceState({}, '', cleanUrl.toString());
+        
+        console.log('URL parameters cleared');
+    }
+
     validateAndUpdateModulo(input) {
         const value = parseInt(input.value);
         const errorSpan = document.getElementById('modulo-error');
@@ -374,8 +552,9 @@ class CollatzApp {
      * @param {number} N - The multiplier for odd numbers (must be odd)
      * @param {number} M - The additive constant (must be odd)
      * @param {boolean} shortcut - Whether to apply shortcut (divide by 2 after Nx+M for odd numbers)
+     * @param {object} positions - Optional node positions to skip automatic layout
      */
-    buildGraph(P, N, M, shortcut) {
+    buildGraph(P, N, M, shortcut, positions = null) {
         // Clear existing graph
         this.cy.elements().remove();
 
@@ -512,7 +691,11 @@ class CollatzApp {
 
         // Add all nodes and edges to the graph
         this.cy.add([...nodes, ...edges]);
-        this.runLayout();
+        
+        // Only run layout if no positions are provided (i.e., not loading from URL)
+        if (!positions) {
+            this.runLayout();
+        }
     }
 
     applyCollatzStep(x, nValue = 3, mValue = 1, shortcut = false) {

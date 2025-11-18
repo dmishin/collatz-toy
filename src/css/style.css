@@ -178,6 +178,15 @@ button#clear-graph:hover {
     box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
 }
 
+#export-link {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    font-weight: 600;
+}
+
+#export-link:hover {
+    box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
+}
+
 .layout-buttons {
     display: grid;
     grid-template-columns: 1fr 1fr;
