@@ -1,0 +1,1 @@
+- This is a project that uses JS to make interactive application. This application is a single web page. It shows several controls (input fields, buttons, checkboxes), and in the main area - shows an interactive graph (of nodes and edges, both have labels). Use Cytoscape.js for graph display. Use Node.js for building the project.

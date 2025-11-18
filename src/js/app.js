@@ -1,0 +1,630 @@
+import cytoscape from 'cytoscape';
+import dagre from 'cytoscape-dagre';
+
+class CollatzApp {
+    constructor() {
+        this.cy = null;
+        this.modulo = 6;
+        this.nValue = 3;
+        this.mValue = 1;
+        this.shortcut = false;
+        this.init();
+    }
+
+    init() {
+        cytoscape.use(dagre);
+        this.initCytoscape();
+        this.bindEvents();
+        this.updateRuleDisplay();
+        
+        // Build graph automatically on page load
+        this.buildGraph(this.modulo, this.nValue, this.mValue, this.shortcut);
+    }
+
+    initCytoscape() {
+        this.cy = cytoscape({
+            container: document.getElementById('cy'),
+            
+            elements: [],
+            
+            style: [
+                {
+                    selector: 'node',
+                    style: {
+                        'background-color': '#667eea',
+                        'label': 'data(label)',
+                        'color': '#fff',
+                        'text-valign': 'center',
+                        'text-halign': 'center',
+                        'font-size': '12px',
+                        'font-weight': 'bold',
+                        'width': '60px',
+                        'height': '60px',
+                        'border-width': '2px',
+                        'border-color': '#4a5bd8'
+                    }
+                },
+                {
+                    selector: 'edge',
+                    style: {
+                        'width': 3,
+                        'line-color': '#ccc',
+                        'target-arrow-color': '#ccc',
+                        'target-arrow-shape': 'triangle',
+                        'curve-style': 'bezier',
+                        'label': 'data(label)',
+                        'color': '#666',
+                        'font-size': '10px',
+                        'text-rotation': 'autorotate'
+                    }
+                },
+                {
+                    selector: 'node.cycle',
+                    style: {
+                        'background-color': '#ff6b6b',
+                        'border-color': '#ee5a52'
+                    }
+                },
+                {
+                    selector: 'edge.cycle',
+                    style: {
+                        'line-color': '#ff6b6b',
+                        'target-arrow-color': '#ff6b6b'
+                    }
+                },
+                {
+                    selector: 'node.node-grey',
+                    style: {
+                        'background-color': '#888',
+                        'border-color': '#000',
+                        'color': '#000',
+                        'border-width': '2px'
+                    }
+                },
+                {
+                    selector: 'node.node-white',
+                    style: {
+                        'background-color': '#fff',
+                        'border-color': '#000',
+                        'color': '#000',
+                        'border-width': '2px'
+                    }
+                },
+                {
+                    selector: 'node.node-black',
+                    style: {
+                        'background-color': '#000',
+                        'border-color': 'transparent',
+                        'color': '#fff',
+                        'border-width': '0px'
+                    }
+                }
+            ],
+            
+            layout: {
+                name: 'dagre',
+                rankDir: 'TB',
+                padding: 30,
+                spacingFactor: 1.2
+            }
+        });
+    }
+
+    bindEvents() {
+        console.log('Binding events...');
+        
+        // Check if elements exist
+        const modulo = document.getElementById('modulo');
+        const nValue = document.getElementById('n-value');
+        const mValue = document.getElementById('m-value');
+        const shortcut = document.getElementById('shortcut');
+        const rebuildBtn = document.getElementById('rebuild-graph');
+        
+        console.log('Elements found:', { modulo, nValue, mValue, shortcut, rebuildBtn });
+        
+        if (!modulo || !nValue || !mValue || !shortcut || !rebuildBtn) {
+            console.error('Some required elements not found!');
+            return;
+        }
+        
+        // Input validation and updates
+        modulo.addEventListener('input', (e) => {
+            this.validateAndUpdateModulo(e.target);
+        });
+
+        nValue.addEventListener('input', (e) => {
+            this.validateAndUpdateN(e.target);
+        });
+
+        mValue.addEventListener('input', (e) => {
+            this.validateAndUpdateM(e.target);
+        });
+
+        shortcut.addEventListener('change', (e) => {
+            this.shortcut = e.target.checked;
+            this.updateRuleDisplay();
+        });
+
+        rebuildBtn.addEventListener('click', () => {
+            this.rebuildGraph();
+        });
+
+        // Layout button event listeners
+        this.bindLayoutButtons();
+
+        // Initialize validation
+        this.validateAllInputs();
+    }
+
+    bindLayoutButtons() {
+        const layoutButtons = [
+            { id: 'layout-dagre', layout: 'dagre' },
+            { id: 'layout-circle', layout: 'circle' },
+            { id: 'layout-grid', layout: 'grid' },
+            { id: 'layout-concentric', layout: 'concentric' },
+            { id: 'layout-cose', layout: 'cose' },
+            { id: 'layout-breadthfirst', layout: 'breadthfirst' },
+            { id: 'layout-random', layout: 'random' }
+        ];
+
+        layoutButtons.forEach(({ id, layout }) => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    this.applyLayout(layout);
+                    this.setActiveLayoutButton(id);
+                });
+            }
+        });
+
+        // Set dagre as initial active layout
+        this.setActiveLayoutButton('layout-dagre');
+    }
+
+    setActiveLayoutButton(activeId) {
+        // Remove active class from all layout buttons
+        document.querySelectorAll('.layout-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Add active class to clicked button
+        const activeBtn = document.getElementById(activeId);
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+        }
+    }
+
+    applyLayout(layoutName) {
+        console.log(`Applying layout: ${layoutName}`);
+        
+        let layoutConfig = {
+            name: layoutName,
+            fit: true,
+            padding: 30
+        };
+
+        // Customize layout configurations
+        switch (layoutName) {
+            case 'dagre':
+                layoutConfig = {
+                    name: 'dagre',
+                    rankDir: 'TB',
+                    padding: 30,
+                    spacingFactor: 1.2,
+                    nodeSep: 50,
+                    rankSep: 80
+                };
+                break;
+            
+            case 'circle':
+                layoutConfig = {
+                    name: 'circle',
+                    fit: true,
+                    padding: 30,
+                    radius: Math.min(400, Math.max(100, this.cy.nodes().length * 20))
+                };
+                break;
+            
+            case 'grid':
+                layoutConfig = {
+                    name: 'grid',
+                    fit: true,
+                    padding: 30,
+                    avoidOverlap: true,
+                    rows: Math.ceil(Math.sqrt(this.cy.nodes().length))
+                };
+                break;
+            
+            case 'concentric':
+                layoutConfig = {
+                    name: 'concentric',
+                    fit: true,
+                    padding: 30,
+                    concentric: (node) => node.degree(),
+                    levelWidth: () => 1,
+                    minNodeSpacing: 50
+                };
+                break;
+            
+            case 'cose':
+                layoutConfig = {
+                    name: 'cose',
+                    idealEdgeLength: 100,
+                    nodeOverlap: 20,
+                    refresh: 20,
+                    fit: true,
+                    padding: 30,
+                    randomize: false,
+                    componentSpacing: 100,
+                    nodeRepulsion: 400000,
+                    edgeElasticity: 100,
+                    nestingFactor: 5,
+                    gravity: 80,
+                    numIter: 1000,
+                    initialTemp: 200,
+                    coolingFactor: 0.95,
+                    minTemp: 1.0
+                };
+                break;
+            
+            case 'breadthfirst':
+                layoutConfig = {
+                    name: 'breadthfirst',
+                    fit: true,
+                    padding: 30,
+                    directed: true,
+                    spacingFactor: 1.5,
+                    maximal: false
+                };
+                break;
+            
+            case 'random':
+                layoutConfig = {
+                    name: 'random',
+                    fit: true,
+                    padding: 30
+                };
+                break;
+        }
+
+        this.cy.layout(layoutConfig).run();
+    }
+
+    validateAndUpdateModulo(input) {
+        const value = parseInt(input.value);
+        const errorSpan = document.getElementById('modulo-error');
+        
+        if (isNaN(value) || value < 1 || !Number.isInteger(value)) {
+            input.classList.add('invalid');
+            errorSpan.textContent = 'Must be a positive integer';
+            return false;
+        } else {
+            input.classList.remove('invalid');
+            errorSpan.textContent = '';
+            this.modulo = value;
+            this.updateRuleDisplay();
+            return true;
+        }
+    }
+
+    validateAndUpdateN(input) {
+        const value = parseInt(input.value);
+        const errorSpan = document.getElementById('n-error');
+        
+        if (isNaN(value) || value % 2 === 0 || !Number.isInteger(value)) {
+            input.classList.add('invalid');
+            errorSpan.textContent = 'Must be an odd integer';
+            return false;
+        } else {
+            input.classList.remove('invalid');
+            errorSpan.textContent = '';
+            this.nValue = value;
+            this.updateRuleDisplay();
+            return true;
+        }
+    }
+
+    validateAndUpdateM(input) {
+        const value = parseInt(input.value);
+        const errorSpan = document.getElementById('m-error');
+        
+        if (isNaN(value) || !Number.isInteger(value) || value % 2 === 0) {
+            input.classList.add('invalid');
+            errorSpan.textContent = 'Must be an odd integer';
+            return false;
+        } else {
+            input.classList.remove('invalid');
+            errorSpan.textContent = '';
+            this.mValue = value;
+            this.updateRuleDisplay();
+            return true;
+        }
+    }
+
+    validateAllInputs() {
+        const moduloValid = this.validateAndUpdateModulo(document.getElementById('modulo'));
+        const nValid = this.validateAndUpdateN(document.getElementById('n-value'));
+        const mValid = this.validateAndUpdateM(document.getElementById('m-value'));
+        
+        return moduloValid && nValid && mValid;
+    }
+
+    updateRuleDisplay() {
+        const oddRule = document.getElementById('odd-rule');
+        if (this.shortcut) {
+            oddRule.textContent = `When x ≡ 1 mod 2, x ↦ (${this.nValue}x+${this.mValue})/2`;
+        } else {
+            oddRule.textContent = `When x ≡ 1 mod 2, x ↦ ${this.nValue}x+${this.mValue}`;
+        }
+    }
+
+    rebuildGraph() {
+        if (!this.validateAllInputs()) {
+            alert('Please fix validation errors before rebuilding the graph.');
+            return;
+        }
+
+        this.cy.elements().remove();
+        this.buildGraph(this.modulo, this.nValue, this.mValue, this.shortcut);
+    }
+
+    /**
+     * Builds a modular arithmetic graph with given parameters
+     * @param {number} P - The modulo value (must be >= 1)
+     * @param {number} N - The multiplier for odd numbers (must be odd)
+     * @param {number} M - The additive constant (must be odd)
+     * @param {boolean} shortcut - Whether to apply shortcut (divide by 2 after Nx+M for odd numbers)
+     */
+    buildGraph(P, N, M, shortcut) {
+        // Clear existing graph
+        this.cy.elements().remove();
+
+        // Parameter validation
+        if (P < 1) {
+            alert('P (modulo) must be >= 1');
+            return;
+        }
+        if (N % 2 === 0) {
+            alert('N must be an odd integer');
+            return;
+        }
+        if (M % 2 === 0) {
+            alert('M must be an odd integer');
+            return;
+        }
+
+        const nodes = [];
+        const edges = [];
+
+        // CYTOSCAPE NODE CREATION EXAMPLES:
+        // 
+        // 1. Basic node with just an ID and label:
+        // this.cy.add({
+        //     group: 'nodes',
+        //     data: {
+        //         id: 'node1',           // Unique identifier
+        //         label: 'My Label'      // Text displayed on the node
+        //     }
+        // });
+        //
+        // 2. Node with custom styling class:
+        // this.cy.add({
+        //     group: 'nodes',
+        //     data: { id: 'node2', label: 'Special Node' },
+        //     classes: 'special-class'   // CSS class for custom styling
+        // });
+
+        // Create nodes for i ranging from 0 to P-1
+        for (let i = 0; i < P; i++) {
+            let nodeClass = '';
+            
+            if (P % 2 === 1) {
+                // P is odd: all nodes are grey circles with black outline and black text
+                nodeClass = 'node-grey';
+            } else {
+                // P is even: even i = white circle with black outline and black text
+                //           odd i = black circle with white text and no outline
+                nodeClass = (i % 2 === 0) ? 'node-white' : 'node-black';
+            }
+
+            nodes.push({
+                group: 'nodes',
+                data: {
+                    id: `n${i}`,
+                    label: i.toString()
+                },
+                classes: nodeClass
+            });
+        }
+
+        // CYTOSCAPE EDGE CREATION EXAMPLES:
+        //
+        // 1. Basic edge between two nodes:
+        // this.cy.add({
+        //     group: 'edges',
+        //     data: {
+        //         id: 'edge1',           // Unique identifier
+        //         source: 'node1',       // ID of source node
+        //         target: 'node2',       // ID of target node
+        //         label: 'Edge Label'    // Text displayed on the edge
+        //     }
+        // });
+
+        // Track existing edges to avoid duplicates (source-target-label combinations)
+        const existingEdges = new Set();
+        let totalAttempts = 0;
+        let duplicatesSkipped = 0;
+        
+        console.log(`Creating edges for P=${P}, N=${N}, M=${M}, shortcut=${shortcut}`);
+        
+        // Create edges for i ranging from 0 to 2*P-1
+        for (let i = 0; i < 2 * P; i++) {
+            totalAttempts++;
+            let j, label;
+            
+            if (i % 2 === 0) {
+                // Even i: j = i/2
+                j = Math.floor(i / 2) % P;
+                label = 'x/2';
+            } else {
+                // Odd i: depends on shortcut
+                if (shortcut) {
+                    // j = (N*i + M)/2 % P
+                    j = Math.floor((N * i + M) / 2) % P;
+                    label = `(${N}x+${M})/2`;
+                } else {
+                    // j = (N*i + M) % P
+                    j = (N * i + M) % P;
+                    label = `${N}x+${M}`;
+                }
+            }
+
+            const sourceNode = i % P;  // Source node is i mod P
+            const targetNode = j;      // Target node is calculated j
+            
+            // Create unique key for this edge (source-target-label)
+            const edgeKey = `${sourceNode}-${targetNode}-${label}`;
+            
+            console.log(`i=${i}: ${sourceNode} → ${targetNode} (${label}) | key: ${edgeKey}`);
+            
+            // Only add edge if this exact combination doesn't already exist
+            if (!existingEdges.has(edgeKey)) {
+                existingEdges.add(edgeKey);
+                
+                edges.push({
+                    group: 'edges',
+                    data: {
+                        id: `e${sourceNode}-${targetNode}-${edges.length}`,
+                        source: `n${sourceNode}`,
+                        target: `n${targetNode}`,
+                        label: label
+                    }
+                });
+                console.log(`  ✓ Added edge`);
+            } else {
+                duplicatesSkipped++;
+                console.log(`  ✗ Duplicate skipped`);
+            }
+        }
+
+        console.log(`Summary: ${totalAttempts} attempts, ${edges.length} edges created, ${duplicatesSkipped} duplicates skipped`);
+        console.log('Final edges:', edges.map(e => `${e.data.source} → ${e.data.target} (${e.data.label})`));
+
+        // Add all nodes and edges to the graph
+        this.cy.add([...nodes, ...edges]);
+        this.runLayout();
+    }
+
+    applyCollatzStep(x, nValue = 3, mValue = 1, shortcut = false) {
+        if (x % 2 === 0) {
+            return Math.floor(x / 2);
+        } else {
+            const result = nValue * x + mValue;
+            return shortcut ? Math.floor(result / 2) : result;
+        }
+    }
+
+    generateCollatzGraph(modulo = 2, nValue = 3, mValue = 1, shortcut = false) {
+        const startingValues = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        const maxIterations = 50;
+        const visited = new Set();
+        const nodes = [];
+        const edges = [];
+        const cycles = new Set();
+
+        for (const start of startingValues) {
+            let current = start;
+            const path = [current];
+            const pathSet = new Set([current]);
+
+            for (let i = 0; i < maxIterations; i++) {
+                const next = this.applyCollatzStep(current, nValue, mValue, shortcut);
+                
+                if (pathSet.has(next)) {
+                    // Found a cycle
+                    const cycleStart = path.indexOf(next);
+                    for (let j = cycleStart; j < path.length; j++) {
+                        cycles.add(path[j]);
+                    }
+                    cycles.add(next);
+                    path.push(next);
+                    break;
+                }
+
+                path.push(next);
+                pathSet.add(next);
+                current = next;
+
+                if (next === 1) {
+                    break;
+                }
+            }
+
+            // Add nodes and edges from this path
+            for (let i = 0; i < path.length; i++) {
+                const value = path[i];
+                
+                if (!visited.has(value)) {
+                    nodes.push({
+                        group: 'nodes',
+                        data: {
+                            id: `n${value}`,
+                            label: value.toString()
+                        },
+                        classes: cycles.has(value) ? 'cycle' : ''
+                    });
+                    visited.add(value);
+                }
+
+                if (i < path.length - 1) {
+                    const nextValue = path[i + 1];
+                    const edgeId = `e${value}-${nextValue}`;
+                    
+                    if (!edges.some(edge => edge.data.id === edgeId)) {
+                        edges.push({
+                            group: 'edges',
+                            data: {
+                                id: edgeId,
+                                source: `n${value}`,
+                                target: `n${nextValue}`,
+                                label: this.getTransitionLabel(value, nextValue, nValue, mValue, shortcut)
+                            },
+                            classes: cycles.has(value) && cycles.has(nextValue) ? 'cycle' : ''
+                        });
+                    }
+                }
+            }
+        }
+
+        this.cy.add([...nodes, ...edges]);
+        this.runLayout();
+    }
+
+    getTransitionLabel(from, to, nValue = 3, mValue = 1, shortcut = false) {
+        if (from % 2 === 0) {
+            return '÷2';
+        } else {
+            if (shortcut) {
+                return `(${nValue}×+${mValue})÷2`;
+            } else {
+                return `${nValue}×+${mValue}`;
+            }
+        }
+    }
+
+    runLayout() {
+        this.cy.layout({
+            name: 'dagre',
+            rankDir: 'TB',
+            padding: 30,
+            spacingFactor: 1.2,
+            nodeSep: 50,
+            rankSep: 80
+        }).run();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, creating CollatzApp...');
+    new CollatzApp();
+});
