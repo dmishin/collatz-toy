@@ -246,9 +246,12 @@ class CollatzApp {
 
     applyLayout(layoutName, animated = true) {
         console.log(`Applying layout: ${layoutName} (${animated ? 'animated' : 'immediate'})`);
-        
-        let layoutConfig = {
-            name: layoutName,
+        const layoutConfig = this.getLayoutConfig(layoutName, animated);
+        this.cy.layout(layoutConfig).run();
+    }
+
+    getLayoutConfig(layoutName, animated = true) {
+        const baseConfig = {
             fit: true,
             padding: 30,
             animate: animated,
@@ -256,104 +259,29 @@ class CollatzApp {
             animationEasing: animated ? 'ease-out' : 'none'
         };
 
-        // Customize layout configurations
         switch (layoutName) {
             case 'dagre':
-                layoutConfig = {
-                    name: 'dagre',
-                    rankDir: 'TB',
-                    padding: 30,
-                    spacingFactor: 1.2,
-                    nodeSep: 50,
-                    rankSep: 80,
-                    animate: animated,
-                    animationDuration: animated ? 1000 : 0,
-                    animationEasing: animated ? 'ease-out' : 'none'
-                };
-                break;
-            
+                return { ...baseConfig, name: 'dagre', rankDir: 'TB', spacingFactor: 1.2, nodeSep: 50, rankSep: 80 };
             case 'circle':
-                layoutConfig = {
-                    name: 'circle',
-                    fit: true,
-                    padding: 30,
-                    radius: Math.min(400, Math.max(100, this.cy.nodes().length * 20))
-                };
-                break;
-            
+                return { ...baseConfig, name: 'circle', radius: Math.min(400, Math.max(100, this.cy.nodes().length * 20)) };
             case 'grid':
-                layoutConfig = {
-                    name: 'grid',
-                    fit: true,
-                    padding: 30,
-                    avoidOverlap: true,
-                    rows: Math.ceil(Math.sqrt(this.cy.nodes().length))
-                };
-                break;
-            
+                return { ...baseConfig, name: 'grid', avoidOverlap: true, rows: Math.ceil(Math.sqrt(this.cy.nodes().length)) };
             case 'concentric':
-                layoutConfig = {
-                    name: 'concentric',
-                    fit: true,
-                    padding: 30,
-                    concentric: (node) => node.degree(),
-                    levelWidth: () => 1,
-                    minNodeSpacing: 50
-                };
-                break;
-            
+                return { ...baseConfig, name: 'concentric', concentric: (node) => node.degree(), levelWidth: () => 1, minNodeSpacing: 50 };
             case 'cose':
-                layoutConfig = {
-                    name: 'cose',
-                    idealEdgeLength: 100,
-                    nodeOverlap: 20,
-                    refresh: 20,
-                    fit: true,
-                    padding: 30,
-                    randomize: false,
-                    componentSpacing: 100,
-                    nodeRepulsion: 400000,
-                    edgeElasticity: 100,
-                    nestingFactor: 5,
-                    gravity: 80,
-                    numIter: 1000,
-                    initialTemp: 200,
-                    coolingFactor: 0.95,
-                    minTemp: 1.0,
-                    animate: animated ? 'end' : false,  // Special animation mode for physics layouts
-                    animationDuration: animated ? 1000 : 0,
-                    animationEasing: animated ? 'ease-out' : 'none'
+                return {
+                    ...baseConfig, name: 'cose', idealEdgeLength: 100, nodeOverlap: 20, refresh: 20,
+                    randomize: false, componentSpacing: 100, nodeRepulsion: 400000, edgeElasticity: 100,
+                    nestingFactor: 5, gravity: 80, numIter: 1000, initialTemp: 200, coolingFactor: 0.95,
+                    minTemp: 1.0, animate: animated ? 'end' : false
                 };
-                break;
-            
             case 'breadthfirst':
-                layoutConfig = {
-                    name: 'breadthfirst',
-                    fit: true,
-                    padding: 30,
-                    directed: true,
-                    spacingFactor: 1.5,
-                    maximal: false
-                };
-                break;
-            
+                return { ...baseConfig, name: 'breadthfirst', directed: true, spacingFactor: 1.5, maximal: false };
             case 'random':
-                layoutConfig = {
-                    name: 'random',
-                    fit: true,
-                    padding: 30
-                };
-                break;
+                return { ...baseConfig, name: 'random' };
+            default:
+                return { ...baseConfig, name: layoutName };
         }
-
-        // Ensure all layouts have animation properties (except those that handle it specially)
-        if (!layoutConfig.hasOwnProperty('animate')) {
-            layoutConfig.animate = animated;
-            layoutConfig.animationDuration = animated ? 1000 : 0;
-            layoutConfig.animationEasing = animated ? 'ease-out' : 'none';
-        }
-
-        this.cy.layout(layoutConfig).run();
     }
 
     exportLink() {
@@ -517,79 +445,35 @@ class CollatzApp {
         console.log('URL parameters cleared');
     }
 
-    validateModulo(input) {
+    validateInput(input, validationFn, errorMessage, propertyName, errorId) {
         const value = parseInt(input.value);
-        const errorSpan = document.getElementById('modulo-error');
+        const errorSpan = document.getElementById(errorId);
         
-        if (isNaN(value) || value < 1 || !Number.isInteger(value)) {
+        if (isNaN(value) || !Number.isInteger(value) || !validationFn(value)) {
             input.classList.add('invalid');
-            errorSpan.textContent = 'Must be a positive integer';
+            errorSpan.textContent = errorMessage;
             return false;
         } else {
             input.classList.remove('invalid');
             errorSpan.textContent = '';
+            if (propertyName) {
+                this[propertyName] = value;
+                this.updateRuleDisplay();
+            }
             return true;
         }
     }
 
     validateAndUpdateModulo(input) {
-        const value = parseInt(input.value);
-        const isValid = this.validateModulo(input);
-        if (isValid) {
-            this.modulo = value;
-            this.updateRuleDisplay();
-        }
-        return isValid;
-    }
-
-    validateN(input) {
-        const value = parseInt(input.value);
-        const errorSpan = document.getElementById('n-error');
-        
-        if (isNaN(value) || value % 2 === 0 || !Number.isInteger(value)) {
-            input.classList.add('invalid');
-            errorSpan.textContent = 'Must be an odd integer';
-            return false;
-        } else {
-            input.classList.remove('invalid');
-            errorSpan.textContent = '';
-            return true;
-        }
+        return this.validateInput(input, (v) => v >= 1, 'Must be a positive integer', 'modulo', 'modulo-error');
     }
 
     validateAndUpdateN(input) {
-        const value = parseInt(input.value);
-        const isValid = this.validateN(input);
-        if (isValid) {
-            this.nValue = value;
-            this.updateRuleDisplay();
-        }
-        return isValid;
-    }
-
-    validateM(input) {
-        const value = parseInt(input.value);
-        const errorSpan = document.getElementById('m-error');
-        
-        if (isNaN(value) || !Number.isInteger(value) || value % 2 === 0) {
-            input.classList.add('invalid');
-            errorSpan.textContent = 'Must be an odd integer';
-            return false;
-        } else {
-            input.classList.remove('invalid');
-            errorSpan.textContent = '';
-            return true;
-        }
+        return this.validateInput(input, (v) => Math.abs(v) % 2 === 1, 'Must be an odd integer', 'nValue', 'n-error');
     }
 
     validateAndUpdateM(input) {
-        const value = parseInt(input.value);
-        const isValid = this.validateM(input);
-        if (isValid) {
-            this.mValue = value;
-            this.updateRuleDisplay();
-        }
-        return isValid;
+        return this.validateInput(input, (v) => Math.abs(v) % 2 === 1, 'Must be an odd integer', 'mValue', 'm-error');
     }
 
     validateAllInputs() {
@@ -609,15 +493,6 @@ class CollatzApp {
         }
     }
 
-    rebuildGraph() {
-        if (!this.validateAllInputs()) {
-            alert('Please fix validation errors before rebuilding the graph.');
-            return;
-        }
-
-        this.cy.elements().remove();
-        this.buildGraph(this.modulo, this.nValue, this.mValue, this.shortcut);
-    }
 
     /**
      * Builds a modular arithmetic graph with given parameters
@@ -648,24 +523,6 @@ class CollatzApp {
         const nodes = [];
         const edges = [];
 
-        // CYTOSCAPE NODE CREATION EXAMPLES:
-        // 
-        // 1. Basic node with just an ID and label:
-        // this.cy.add({
-        //     group: 'nodes',
-        //     data: {
-        //         id: 'node1',           // Unique identifier
-        //         label: 'My Label'      // Text displayed on the node
-        //     }
-        // });
-        //
-        // 2. Node with custom styling class:
-        // this.cy.add({
-        //     group: 'nodes',
-        //     data: { id: 'node2', label: 'Special Node' },
-        //     classes: 'special-class'   // CSS class for custom styling
-        // });
-
         // Create nodes for i ranging from 0 to P-1
         for (let i = 0; i < P; i++) {
             let nodeClass = '';
@@ -688,19 +545,6 @@ class CollatzApp {
                 classes: nodeClass
             });
         }
-
-        // CYTOSCAPE EDGE CREATION EXAMPLES:
-        //
-        // 1. Basic edge between two nodes:
-        // this.cy.add({
-        //     group: 'edges',
-        //     data: {
-        //         id: 'edge1',           // Unique identifier
-        //         source: 'node1',       // ID of source node
-        //         target: 'node2',       // ID of target node
-        //         label: 'Edge Label'    // Text displayed on the edge
-        //     }
-        // });
 
         // Track existing edges to avoid duplicates (source-target-label combinations)
         const existingEdges = new Set();
@@ -775,102 +619,6 @@ class CollatzApp {
         }
     }
 
-    applyCollatzStep(x, nValue = 3, mValue = 1, shortcut = false) {
-        if (x % 2 === 0) {
-            return Math.floor(x / 2);
-        } else {
-            const result = nValue * x + mValue;
-            return shortcut ? Math.floor(result / 2) : result;
-        }
-    }
-
-    generateCollatzGraph(modulo = 2, nValue = 3, mValue = 1, shortcut = false) {
-        const startingValues = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-        const maxIterations = 50;
-        const visited = new Set();
-        const nodes = [];
-        const edges = [];
-        const cycles = new Set();
-
-        for (const start of startingValues) {
-            let current = start;
-            const path = [current];
-            const pathSet = new Set([current]);
-
-            for (let i = 0; i < maxIterations; i++) {
-                const next = this.applyCollatzStep(current, nValue, mValue, shortcut);
-                
-                if (pathSet.has(next)) {
-                    // Found a cycle
-                    const cycleStart = path.indexOf(next);
-                    for (let j = cycleStart; j < path.length; j++) {
-                        cycles.add(path[j]);
-                    }
-                    cycles.add(next);
-                    path.push(next);
-                    break;
-                }
-
-                path.push(next);
-                pathSet.add(next);
-                current = next;
-
-                if (next === 1) {
-                    break;
-                }
-            }
-
-            // Add nodes and edges from this path
-            for (let i = 0; i < path.length; i++) {
-                const value = path[i];
-                
-                if (!visited.has(value)) {
-                    nodes.push({
-                        group: 'nodes',
-                        data: {
-                            id: `n${value}`,
-                            label: value.toString()
-                        },
-                        classes: cycles.has(value) ? 'cycle' : ''
-                    });
-                    visited.add(value);
-                }
-
-                if (i < path.length - 1) {
-                    const nextValue = path[i + 1];
-                    const edgeId = `e${value}-${nextValue}`;
-                    
-                    if (!edges.some(edge => edge.data.id === edgeId)) {
-                        edges.push({
-                            group: 'edges',
-                            data: {
-                                id: edgeId,
-                                source: `n${value}`,
-                                target: `n${nextValue}`,
-                                label: this.getTransitionLabel(value, nextValue, nValue, mValue, shortcut)
-                            },
-                            classes: cycles.has(value) && cycles.has(nextValue) ? 'cycle' : ''
-                        });
-                    }
-                }
-            }
-        }
-
-        this.cy.add([...nodes, ...edges]);
-        this.applyLayout('dagre', false);  // Use dagre layout without animation for legacy method
-    }
-
-    getTransitionLabel(from, to, nValue = 3, mValue = 1, shortcut = false) {
-        if (from % 2 === 0) {
-            return '÷2';
-        } else {
-            if (shortcut) {
-                return `(${nValue}×+${mValue})÷2`;
-            } else {
-                return `${nValue}×+${mValue}`;
-            }
-        }
-    }
 
     runLayout(animated = true) {
         this.cy.layout({
