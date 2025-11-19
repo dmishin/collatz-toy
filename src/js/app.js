@@ -222,6 +222,21 @@ class CollatzApp {
             });
         }
 
+        // Label visibility toggles
+        const nodeLabelsCheckbox = document.getElementById('show-node-labels');
+        if (nodeLabelsCheckbox) {
+            nodeLabelsCheckbox.addEventListener('change', (e) => {
+                this.toggleNodeLabels(e.target.checked);
+            });
+        }
+
+        const edgeLabelsCheckbox = document.getElementById('show-edge-labels');
+        if (edgeLabelsCheckbox) {
+            edgeLabelsCheckbox.addEventListener('change', (e) => {
+                this.toggleEdgeLabels(e.target.checked);
+            });
+        }
+
         // Scale buttons
         const scaleUpBtn = document.getElementById('scale-up');
         if (scaleUpBtn) {
@@ -1082,6 +1097,22 @@ class CollatzApp {
         });
         
         this.showNotification(`Cycle path drawn! Click on red line to clear.`, 'success');
+    }
+
+    toggleNodeLabels(show) {
+        if (show) {
+            this.cy.style().selector('node').style('label', 'data(label)').update();
+        } else {
+            this.cy.style().selector('node').style('label', '').update();
+        }
+    }
+
+    toggleEdgeLabels(show) {
+        if (show) {
+            this.cy.style().selector('edge').style('label', 'data(label)').update();
+        } else {
+            this.cy.style().selector('edge').style('label', '').update();
+        }
     }
 
     runLayout(animated = true) {
