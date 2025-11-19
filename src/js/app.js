@@ -214,6 +214,14 @@ class CollatzApp {
             });
         }
 
+        // Show cycle button
+        const cycleBtn = document.getElementById('show-cycle');
+        if (cycleBtn) {
+            cycleBtn.addEventListener('click', () => {
+                this.showCycle();
+            });
+        }
+
         // Scale buttons
         const scaleUpBtn = document.getElementById('scale-up');
         if (scaleUpBtn) {
@@ -988,6 +996,92 @@ class CollatzApp {
         this.cy.fit();
         
         this.showNotification(`Modulo halved from ${oldModulo} to ${this.modulo}!`, 'success');
+    }
+
+    showCycle() {
+        const input = prompt('Enter comma-separated integers for the cycle path:');
+        if (!input) return;
+        
+        try {
+            // Parse input and apply modulo
+            const numbers = input.split(',').map(s => {
+                const num = parseInt(s.trim());
+                if (isNaN(num)) throw new Error(`Invalid number: ${s.trim()}`);
+                return this.mod(num, this.modulo);
+            });
+            
+            if (numbers.length < 2) {
+                alert('Please enter at least 2 numbers for a cycle.');
+                return;
+            }
+            
+            console.log('Drawing cycle path:', numbers);
+            this.drawCyclePath(numbers);
+            
+        } catch (err) {
+            alert(`Error parsing input: ${err.message}`);
+        }
+    }
+    
+    drawCyclePath(numbers) {
+        // Remove existing canvas if any
+        const existingCanvas = document.getElementById('cycle-canvas');
+        if (existingCanvas) {
+            existingCanvas.remove();
+        }
+        
+        // Create canvas overlay
+        const canvas = document.createElement('canvas');
+        canvas.id = 'cycle-canvas';
+        
+        // Position it over the cytoscape container
+        const cyContainer = document.getElementById('cy');
+        canvas.width = cyContainer.offsetWidth;
+        canvas.height = cyContainer.offsetHeight;
+        
+        // Add to cytoscape container directly (positioned absolutely)
+        cyContainer.appendChild(canvas);
+        
+        // Set up canvas context
+        const ctx = canvas.getContext('2d');
+        ctx.strokeStyle = '#ff0000';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        // Get node positions and draw lines
+        const positions = [];
+        for (const num of numbers) {
+            const node = this.cy.getElementById(`n${num}`);
+            if (node.length === 0) {
+                alert(`Node ${num} not found in graph.`);
+                canvas.remove();
+                return;
+            }
+            
+            const pos = node.renderedPosition(); // Get position in rendered coordinates
+            positions.push({ x: pos.x, y: pos.y });
+        }
+        
+        // Draw the cycle path
+        ctx.beginPath();
+        ctx.moveTo(positions[0].x, positions[0].y);
+        
+        for (let i = 1; i < positions.length; i++) {
+            ctx.lineTo(positions[i].x, positions[i].y);
+        }
+        
+        // Close the cycle by connecting back to first node
+        ctx.lineTo(positions[0].x, positions[0].y);
+        ctx.stroke();
+        
+        // Add click handler to remove canvas
+        canvas.addEventListener('click', () => {
+            canvas.remove();
+            this.showNotification('Cycle path cleared!', 'success');
+        });
+        
+        this.showNotification(`Cycle path drawn! Click on red line to clear.`, 'success');
     }
 
     runLayout(animated = true) {
