@@ -182,6 +182,14 @@ class CollatzApp {
             });
         }
 
+        // Double modulo button
+        const doubleBtn = document.getElementById('double-modulo');
+        if (doubleBtn) {
+            doubleBtn.addEventListener('click', () => {
+                this.doubleModulo();
+            });
+        }
+
         // Layout button event listeners
         this.bindLayoutButtons();
 
@@ -646,6 +654,83 @@ class CollatzApp {
         }
     }
 
+    doubleModulo() {
+        if (!this.validateAllInputs()) {
+            alert('Please fix validation errors before doubling modulo.');
+            return;
+        }
+
+        console.log('Doubling modulo from', this.modulo, 'to', this.modulo * 2);
+        
+        // Store current node positions
+        const oldPositions = {};
+        this.cy.nodes().forEach(node => {
+            const pos = node.position();
+            const nodeId = parseInt(node.id().replace('n', ''));
+            oldPositions[nodeId] = { x: pos.x, y: pos.y };
+        });
+        
+        // Double the modulo value
+        const oldModulo = this.modulo;
+        this.modulo = this.modulo * 2;
+        document.getElementById('modulo').value = this.modulo;
+        
+        // Calculate new positions for the doubled graph
+        const newPositions = {};
+        
+        // For even nodes in the new graph: map from old positions
+        for (let i = 0; i < this.modulo; i += 2) {
+            const oldNode = Math.floor(i / 2);
+            if (oldPositions[oldNode]) {
+                newPositions[i] = oldPositions[oldNode];
+            }
+        }
+        
+        // For odd nodes in the new graph: calculate average of two related even nodes
+        for (let n = 1; n < this.modulo; n += 2) {
+            const pos1Node = (2 * n) % this.modulo;
+            const pos2Node = this.mod(this.nValue * n + this.mValue, this.modulo);
+            
+            let avgPos = null;
+            
+            if (newPositions[pos1Node] && newPositions[pos2Node]) {
+                // Both reference positions exist, calculate average
+                avgPos = {
+                    x: (newPositions[pos1Node].x + newPositions[pos2Node].x) / 2,
+                    y: (newPositions[pos1Node].y + newPositions[pos2Node].y) / 2
+                };
+            } else if (newPositions[pos1Node]) {
+                // Only first reference exists
+                avgPos = { ...newPositions[pos1Node] };
+            } else if (newPositions[pos2Node]) {
+                // Only second reference exists  
+                avgPos = { ...newPositions[pos2Node] };
+            }
+            
+            if (avgPos) {
+                newPositions[n] = avgPos;
+            }
+        }
+        
+        console.log(`Mapped ${Object.keys(oldPositions).length} old positions to ${Object.keys(newPositions).length} new positions`);
+        
+        // Rebuild graph with new modulo and apply calculated positions
+        this.buildGraph(this.modulo, this.nValue, this.mValue, this.shortcut, newPositions);
+        
+        // Restore the calculated positions
+        Object.keys(newPositions).forEach(nodeId => {
+            const node = this.cy.getElementById(`n${nodeId}`);
+            if (node.length > 0) {
+                const pos = newPositions[nodeId];
+                node.position({ x: pos.x, y: pos.y });
+            }
+        });
+        
+        // Fit the graph to show all nodes
+        this.cy.fit();
+        
+        this.showNotification(`Modulo doubled from ${oldModulo} to ${this.modulo}!`, 'success');
+    }
 
     runLayout(animated = true) {
         this.cy.layout({
