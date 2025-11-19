@@ -182,6 +182,14 @@ class CollatzApp {
             });
         }
 
+        // Export SVG button
+        const exportSvgBtn = document.getElementById('export-svg');
+        if (exportSvgBtn) {
+            exportSvgBtn.addEventListener('click', () => {
+                this.exportSvg();
+            });
+        }
+
         // Double modulo button
         const doubleBtn = document.getElementById('double-modulo');
         if (doubleBtn) {
@@ -730,6 +738,28 @@ class CollatzApp {
         this.cy.fit();
         
         this.showNotification(`Modulo doubled from ${oldModulo} to ${this.modulo}!`, 'success');
+    }
+
+    exportSvg() {
+        console.log('Exporting graph as PNG...');
+        
+        try {
+            // Get PNG representation of the graph
+            const pngContent = this.cy.png({ scale: 2, full: true, bg: 'white' });
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.href = pngContent;
+            link.download = `collatz-graph-P${this.modulo}-N${this.nValue}-M${this.mValue}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            this.showNotification('PNG exported successfully!', 'success');
+        } catch (err) {
+            console.error('PNG export failed:', err);
+            this.showNotification('Image export failed', 'error');
+        }
     }
 
     runLayout(animated = true) {
