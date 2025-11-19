@@ -40,8 +40,60 @@
                 <div class="control-group">
                     <h3>Process Rules</h3>
                     <div class="rule-display">
-                        <p>x ≡ 0 mod 2: x ↦ x/2</p>
-                        <p id="odd-rule">When x ≡ 1 mod 2, x ↦ Nx+M</p>
+                        <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+                            <mrow>
+                                <mi>f</mi>
+                                <mrow>
+                                    <mo>(</mo>
+                                    <mi>x</mi>
+                                    <mo>)</mo>
+                                </mrow>
+                                <mo>=</mo>
+                                <mrow>
+                                    <mo>{</mo>
+                                    <mtable columnalign="left" columnspacing="1em">
+                                        <mtr>
+                                            <mtd>
+                                                <mfrac>
+                                                    <mi>x</mi>
+                                                    <mn>2</mn>
+                                                </mfrac>
+                                            </mtd>
+                                            <mtd>
+                                                <mspace width="1em"/>
+                                                <mtext>if </mtext>
+                                                <mi>x</mi>
+                                                <mo>≡</mo>
+                                                <mn>0</mn>
+                                                <mspace width="0.3em"/>
+                                                <mo>mod</mo>
+                                                <mspace width="0.3em"/>
+                                                <mn>2</mn>
+                                            </mtd>
+                                        </mtr>
+                                        <mtr id="odd-rule-math">
+                                            <mtd>
+                                                <mi>N</mi>
+                                                <mi>x</mi>
+                                                <mo>+</mo>
+                                                <mi>M</mi>
+                                            </mtd>
+                                            <mtd>
+                                                <mspace width="1em"/>
+                                                <mtext>if </mtext>
+                                                <mi>x</mi>
+                                                <mo>≡</mo>
+                                                <mn>1</mn>
+                                                <mspace width="0.3em"/>
+                                                <mo>mod</mo>
+                                                <mspace width="0.3em"/>
+                                                <mn>2</mn>
+                                            </mtd>
+                                        </mtr>
+                                    </mtable>
+                                </mrow>
+                            </mrow>
+                        </math>
                     </div>
                 </div>
                 

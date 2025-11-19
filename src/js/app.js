@@ -543,11 +543,50 @@ class CollatzApp {
     }
 
     updateRuleDisplay() {
-        const oddRule = document.getElementById('odd-rule');
-        if (this.shortcut) {
-            oddRule.textContent = `x ≡ 1 mod 2: x ↦ (${this.nValue}x+${this.mValue})/2`;
-        } else {
-            oddRule.textContent = `x ≡ 1 mod 2: x ↦ ${this.nValue}x+${this.mValue}`;
+        const oddRuleMath = document.getElementById('odd-rule-math');
+        if (!oddRuleMath) return;
+        
+        // Update the first cell (the formula)
+        const formulaCell = oddRuleMath.querySelector('mtd:first-child');
+        if (formulaCell) {
+            if (this.shortcut) {
+                // (Nx + M)/2 formula
+                formulaCell.innerHTML = `
+                    <mfrac>
+                        <mrow>
+                            <mn>${this.nValue}</mn>
+                            <mi>x</mi>
+                            <mo>+</mo>
+                            <mn>${this.mValue}</mn>
+                        </mrow>
+                        <mn>2</mn>
+                    </mfrac>
+                `;
+            } else {
+                // Nx + M formula
+                formulaCell.innerHTML = `
+                    <mn>${this.nValue}</mn>
+                    <mi>x</mi>
+                    <mo>+</mo>
+                    <mn>${this.mValue}</mn>
+                `;
+            }
+        }
+        
+        // Update the condition cell for the second row
+        const conditionCell = oddRuleMath.querySelector('mtd:last-child');
+        if (conditionCell) {
+            conditionCell.innerHTML = `
+                <mspace width="1em"/>
+                <mtext>if </mtext>
+                <mi>x</mi>
+                <mo>≡</mo>
+                <mn>1</mn>
+                <mspace width="0.3em"/>
+                <mo>mod</mo>
+                <mspace width="0.3em"/>
+                <mn>2</mn>
+            `;
         }
     }
 
