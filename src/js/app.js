@@ -198,6 +198,14 @@ class CollatzApp {
             });
         }
 
+        // Symmetrize button
+        const symmetryBtn = document.getElementById('make-symmetric');
+        if (symmetryBtn) {
+            symmetryBtn.addEventListener('click', () => {
+                this.makeSymmetric();
+            });
+        }
+
         // Scale buttons
         const scaleUpBtn = document.getElementById('scale-up');
         if (scaleUpBtn) {
@@ -848,6 +856,76 @@ class CollatzApp {
         this.cy.fit();
         
         this.showNotification(`Layout scaled ${factor > 1 ? 'up' : 'down'}!`, 'success');
+    }
+
+    makeSymmetric() {
+        console.log('Making layout centrally symmetric...');
+        
+        const nodes = this.cy.nodes();
+        if (nodes.length === 0) return;
+        
+        // Calculate center of mass of all nodes
+        let centerX = 0, centerY = 0;
+        nodes.forEach(node => {
+            const pos = node.position();
+            centerX += pos.x;
+            centerY += pos.y;
+        });
+        centerX /= nodes.length;
+        centerY /= nodes.length;
+        
+        console.log(`Center of mass: (${centerX.toFixed(1)}, ${centerY.toFixed(1)})`);
+        
+        // For each pair (x, N-1-x), make them symmetric around center
+        const P = this.modulo;
+        const processedPairs = new Set();
+        
+        for (let x = 0; x < P; x++) {
+            const partner = (P - 1 - x) % P;
+            
+            // Skip if we already processed this pair
+            const pairKey = `${Math.min(x, partner)}-${Math.max(x, partner)}`;
+            if (processedPairs.has(pairKey)) continue;
+            processedPairs.add(pairKey);
+            
+            const nodeX = this.cy.getElementById(`n${x}`);
+            const nodePartner = this.cy.getElementById(`n${partner}`);
+            
+            if (nodeX.length === 0 || nodePartner.length === 0) continue;
+            
+            if (x === partner) {
+                // Self-symmetric node (only when P is odd and x = (P-1)/2)
+                // Place it exactly at center of mass
+                nodeX.position({ x: centerX, y: centerY });
+                console.log(`Centered self-symmetric node ${x} at (${centerX.toFixed(1)}, ${centerY.toFixed(1)})`);
+            } else {
+                // Get current positions
+                const posX = nodeX.position();
+                const posPartner = nodePartner.position();
+                
+                // Calculate current midpoint
+                const midX = (posX.x + posPartner.x) / 2;
+                const midY = (posX.y + posPartner.y) / 2;
+                
+                // Calculate displacement to center the midpoint on center of mass
+                const displaceX = centerX - midX;
+                const displaceY = centerY - midY;
+                
+                // Apply symmetric displacement
+                const newPosX = { x: posX.x + displaceX, y: posX.y + displaceY };
+                const newPosPartner = { x: posPartner.x + displaceX, y: posPartner.y + displaceY };
+                
+                nodeX.position(newPosX);
+                nodePartner.position(newPosPartner);
+                
+                console.log(`Symmetrized pair (${x}, ${partner}): midpoint moved by (${displaceX.toFixed(1)}, ${displaceY.toFixed(1)})`);
+            }
+        }
+        
+        // Fit the graph to show all nodes after symmetrizing
+        this.cy.fit();
+        
+        this.showNotification('Layout made symmetric!', 'success');
     }
 
     runLayout(animated = true) {
