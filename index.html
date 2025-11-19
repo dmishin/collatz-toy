@@ -7,14 +7,10 @@
     <link rel="stylesheet" href="src/css/style.css">
 </head>
 <body>
-    <div class="app-container">
-        <header>
-            <h1>Collatz Process Visualization</h1>
-        </header>
-        
-        <div class="main-content">
+    <div class="main-content">
             <aside class="controls-panel">
                 <div class="control-group">
+                    <h2>Collatz Process Visualization</h2>
                     <h3>Nx + M process modulo P</h3>
                     
                     <div class="input-group">
@@ -44,7 +40,7 @@
                 <div class="control-group">
                     <h3>Process Rules</h3>
                     <div class="rule-display">
-                        <p>When x ≡ 0 mod 2, x ↦ x/2</p>
+                        <p>x ≡ 0 mod 2: x ↦ x/2</p>
                         <p id="odd-rule">When x ≡ 1 mod 2, x ↦ Nx+M</p>
                     </div>
                 </div>
@@ -72,7 +68,6 @@
                 <div id="cy"></div>
             </main>
         </div>
-    </div>
     
     <script type="module" src="src/js/app.js"></script>
 </body>

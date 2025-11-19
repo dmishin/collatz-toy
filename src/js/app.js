@@ -522,9 +522,9 @@ class CollatzApp {
     updateRuleDisplay() {
         const oddRule = document.getElementById('odd-rule');
         if (this.shortcut) {
-            oddRule.textContent = `When x ≡ 1 mod 2, x ↦ (${this.nValue}x+${this.mValue})/2`;
+            oddRule.textContent = `x ≡ 1 mod 2: x ↦ (${this.nValue}x+${this.mValue})/2`;
         } else {
-            oddRule.textContent = `When x ≡ 1 mod 2, x ↦ ${this.nValue}x+${this.mValue}`;
+            oddRule.textContent = `x ≡ 1 mod 2: x ↦ ${this.nValue}x+${this.mValue}`;
         }
     }
 
