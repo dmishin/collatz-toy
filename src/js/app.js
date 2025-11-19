@@ -549,6 +549,10 @@ class CollatzApp {
         // Update the first cell (the formula)
         const formulaCell = oddRuleMath.querySelector('mtd:first-child');
         if (formulaCell) {
+            // Handle sign for M value
+            const mSign = this.mValue >= 0 ? '+' : '−';
+            const mAbs = Math.abs(this.mValue);
+            
             if (this.shortcut) {
                 // (Nx + M)/2 formula
                 formulaCell.innerHTML = `
@@ -556,8 +560,8 @@ class CollatzApp {
                         <mrow>
                             <mn>${this.nValue}</mn>
                             <mi>x</mi>
-                            <mo>+</mo>
-                            <mn>${this.mValue}</mn>
+                            <mo>${mSign}</mo>
+                            <mn>${mAbs}</mn>
                         </mrow>
                         <mn>2</mn>
                     </mfrac>
@@ -567,8 +571,8 @@ class CollatzApp {
                 formulaCell.innerHTML = `
                     <mn>${this.nValue}</mn>
                     <mi>x</mi>
-                    <mo>+</mo>
-                    <mn>${this.mValue}</mn>
+                    <mo>${mSign}</mo>
+                    <mn>${mAbs}</mn>
                 `;
             }
         }
