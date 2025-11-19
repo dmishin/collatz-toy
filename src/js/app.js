@@ -198,6 +198,21 @@ class CollatzApp {
             });
         }
 
+        // Scale buttons
+        const scaleUpBtn = document.getElementById('scale-up');
+        if (scaleUpBtn) {
+            scaleUpBtn.addEventListener('click', () => {
+                this.scaleLayout(1.2);
+            });
+        }
+
+        const scaleDownBtn = document.getElementById('scale-down');
+        if (scaleDownBtn) {
+            scaleDownBtn.addEventListener('click', () => {
+                this.scaleLayout(0.83);
+            });
+        }
+
         // Layout button event listeners
         this.bindLayoutButtons();
 
@@ -760,6 +775,36 @@ class CollatzApp {
             console.error('PNG export failed:', err);
             this.showNotification('Image export failed', 'error');
         }
+    }
+
+    scaleLayout(factor) {
+        console.log(`Scaling layout by factor: ${factor}`);
+        
+        // Get center point of current layout
+        const nodes = this.cy.nodes();
+        if (nodes.length === 0) return;
+        
+        let centerX = 0, centerY = 0;
+        nodes.forEach(node => {
+            const pos = node.position();
+            centerX += pos.x;
+            centerY += pos.y;
+        });
+        centerX /= nodes.length;
+        centerY /= nodes.length;
+        
+        // Scale each node's position relative to center
+        nodes.forEach(node => {
+            const pos = node.position();
+            const newX = centerX + (pos.x - centerX) * factor;
+            const newY = centerY + (pos.y - centerY) * factor;
+            node.position({ x: newX, y: newY });
+        });
+        
+        // Fit the graph to show all nodes after scaling
+        this.cy.fit();
+        
+        this.showNotification(`Layout scaled ${factor > 1 ? 'up' : 'down'}!`, 'success');
     }
 
     runLayout(animated = true) {
