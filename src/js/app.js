@@ -198,6 +198,14 @@ class CollatzApp {
             });
         }
 
+        // Halve modulo button
+        const halveBtn = document.getElementById('halve-modulo');
+        if (halveBtn) {
+            halveBtn.addEventListener('click', () => {
+                this.halveModulo();
+            });
+        }
+
         // Symmetrize button
         const symmetryBtn = document.getElementById('make-symmetric');
         if (symmetryBtn) {
@@ -926,6 +934,60 @@ class CollatzApp {
         this.cy.fit();
         
         this.showNotification('Layout made symmetric!', 'success');
+    }
+
+    halveModulo() {
+        if (!this.validateAllInputs()) {
+            alert('Please fix validation errors before halving modulo.');
+            return;
+        }
+
+        if (this.modulo % 2 !== 0) {
+            alert('Modulo must be even to halve it.');
+            return;
+        }
+
+        if (this.modulo < 2) {
+            alert('Modulo must be at least 2 to halve it.');
+            return;
+        }
+
+        console.log('Halving modulo from', this.modulo, 'to', this.modulo / 2);
+        
+        // Store current positions of even nodes only
+        const evenPositions = {};
+        this.cy.nodes().forEach(node => {
+            const nodeId = parseInt(node.id().replace('n', ''));
+            if (nodeId % 2 === 0) {
+                const pos = node.position();
+                const newNodeId = nodeId / 2; // Map even node to its half
+                evenPositions[newNodeId] = { x: pos.x, y: pos.y };
+            }
+        });
+        
+        // Halve the modulo value
+        const oldModulo = this.modulo;
+        this.modulo = this.modulo / 2;
+        document.getElementById('modulo').value = this.modulo;
+        
+        console.log(`Mapped ${Object.keys(evenPositions).length} even node positions to new graph`);
+        
+        // Rebuild graph with new modulo and apply mapped positions
+        this.buildGraph(this.modulo, this.nValue, this.mValue, this.shortcut, evenPositions);
+        
+        // Restore the mapped positions
+        Object.keys(evenPositions).forEach(nodeId => {
+            const node = this.cy.getElementById(`n${nodeId}`);
+            if (node.length > 0) {
+                const pos = evenPositions[nodeId];
+                node.position({ x: pos.x, y: pos.y });
+            }
+        });
+        
+        // Fit the graph to show all nodes
+        this.cy.fit();
+        
+        this.showNotification(`Modulo halved from ${oldModulo} to ${this.modulo}!`, 'success');
     }
 
     runLayout(animated = true) {
