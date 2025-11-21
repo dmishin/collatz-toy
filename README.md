@@ -1,115 +1,106 @@
-# Interactive Graph Application
+# Collatz mod P - Interactive Graph Visualizer
 
-A single-page web application for creating and manipulating interactive graphs with nodes and edges. Built with Cytoscape.js and Vite.
+An interactive web application for visualizing generalized Collatz processes modulo P as directed graphs. Explore how different parameters (N, M, shortcut) affect the structure of these mathematical sequences.
 
-## Features
+## 🌐 Live Demo
 
-- **Interactive Graph Visualization**: Create, edit, and visualize graphs with labeled nodes and edges
-- **Node Management**: Add nodes with custom labels, select and remove nodes
-- **Edge Management**: Create edges between selected nodes with optional labels
-- **Graph Controls**: 
-  - Toggle between directed and undirected graphs
-  - Show/hide labels
-  - Randomize layout
-  - Clear entire graph
-- **Responsive Design**: Works on desktop and mobile devices
-- **Real-time Updates**: Interactive editing with immediate visual feedback
+**Try it online:** [https://dmishin.github.io/collatz-toy/](https://dmishin.github.io/collatz-toy/)
 
-## Prerequisites
+## 📖 What is it?
 
-- Node.js 18.x or higher
+This application generalizes the famous [Collatz conjecture](https://en.wikipedia.org/wiki/Collatz_conjecture) by allowing custom parameters:
+- **Standard Collatz**: If odd, multiply by 3 and add 1; if even, divide by 2
+- **Generalized**: If odd, multiply by N and add M; if even, divide by 2
+- **Modular arithmetic**: All operations performed modulo P
+
+The visualization shows how numbers flow between residue classes, revealing cycles, attractors, and mathematical structures.
+
+## ✨ Features
+
+- **Interactive 2D graph** with multiple layout algorithms
+- **3D visualization** for exploring complex structures  
+- **Cycle detection** and highlighting
+- **Parameter manipulation** tools (double/halve modulo, symmetrize)
+- **Export capabilities** (PNG images, shareable links)
+- **Real-time updates** as you change parameters
+- **Responsive design** works on desktop and mobile
+
+## 🤖 Development Note
+
+This project was created almost entirely through AI-assisted development using **Claude (Anthropic)**. The mathematical concepts, UI design, interactive features, and 3D visualization were all implemented through natural language conversations with the AI assistant.
+
+## 🚀 Build Instructions
+
+### Prerequisites
+- [Node.js](https://nodejs.org/) (version 14 or higher)
 - npm (comes with Node.js)
 
-## Installation
-
-1. Clone or download the project
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-## Development
-
-Start the development server with hot reloading:
-
+### Local Development
 ```bash
+# Clone the repository
+git clone https://github.com/dmishin/collatz-toys.git
+cd collatz-toys
+
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
+
+# Open http://localhost:5173 in your browser
 ```
 
-The application will be available at `http://localhost:5173/`
-
-## Building for Production
-
-Create an optimized production build:
-
+### Build for Production
 ```bash
+# Build the project
 npm run build
-```
 
-The built files will be generated in the `dist/` directory.
-
-## Preview Production Build
-
-Preview the production build locally:
-
-```bash
+# Preview the build
 npm run preview
+
+# Built files will be in the dist/ directory
 ```
 
-## Deployment
-
-### Static Hosting (Netlify, Vercel, GitHub Pages)
-
-1. Build the project:
-   ```bash
-   npm run build
-   ```
-
-2. Deploy the contents of the `dist/` directory to your hosting service.
-
-### Manual Deployment
-
-1. Run the build command
-2. Copy all files from the `dist/` directory to your web server
-3. Serve the files using any static file server
-
-## Project Structure
-
+### Deploy
+Copy the contents of `dist/` to your web server:
 ```
-├── index.html          # Main HTML file
-├── package.json        # Project dependencies and scripts
-├── src/
-│   ├── css/
-│   │   └── style.css   # Application styles
-│   └── js/
-│       └── app.js      # Main application logic
-└── dist/               # Production build output (generated)
+dist/
+├── index.html
+├── help.html  
+├── 3d.html
+└── assets/
+    ├── main-[hash].js
+    └── style-[hash].css
 ```
 
-## Usage
+## 🛠️ Technology Stack
 
-1. **Adding Nodes**: Enter a label and click "Add Node" or press Enter
-2. **Adding Edges**: Select two nodes, optionally enter an edge label, then click "Add Edge"
-3. **Removing Elements**: Select nodes or edges and click the respective remove button
-4. **Graph Options**:
-   - **Show Labels**: Toggle visibility of node and edge labels
-   - **Directed Graph**: Switch between directed and undirected edges
-   - **Randomize Layout**: Randomly repositions all nodes
-   - **Clear Graph**: Removes all nodes and edges
+- **Frontend**: Vanilla JavaScript (ES6+)
+- **2D Graphs**: [Cytoscape.js](https://cytoscape.org/) with Dagre layout
+- **3D Graphs**: [3D-Force-Graph](https://github.com/vasturiano/3d-force-graph)
+- **Build Tool**: [Vite](https://vitejs.dev/)
+- **Math**: MathML for formula rendering
 
-## Dependencies
+## 🧮 Mathematical Background
 
-- **cytoscape**: Graph theory library for visualization and analysis
-- **vite**: Build tool and development server
+The application explores the dynamics of the generalized Collatz function:
+```
+f(x) = { x/2           if x ≡ 0 (mod 2)
+       { Nx + M        if x ≡ 1 (mod 2)
+```
 
-## Browser Support
+With optional "shortcut" mode:
+```
+f(x) = { x/2           if x ≡ 0 (mod 2)  
+       { (Nx + M)/2    if x ≡ 1 (mod 2)
+```
 
-Modern browsers that support ES6+ features:
-- Chrome 60+
-- Firefox 60+
-- Safari 12+
-- Edge 79+
+All operations are performed modulo P, creating finite directed graphs that reveal the underlying structure of these sequences.
 
-## License
+## 📄 License
 
-ISC
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## 🤝 Contributing
+
+While this was primarily an AI-assisted development experiment, contributions are welcome! Please feel free to open issues or submit pull requests.
