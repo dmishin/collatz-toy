@@ -373,3 +373,24 @@ button#clear-graph:hover {
 .labels-group .checkbox-group {
     margin-bottom: 0;
 }
+
+/* Help link styling */
+.help-link {
+    display: inline-block;
+    margin-left: 0.5rem;
+    background: #667eea;
+    color: white !important;
+    text-decoration: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    text-align: center;
+    line-height: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.help-link:hover {
+    background: #5a6fd8;
+    text-decoration: none;
+}
