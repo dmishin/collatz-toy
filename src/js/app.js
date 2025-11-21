@@ -10,6 +10,7 @@ class CollatzApp {
         this.shortcut = false;
         this.rebuildTimeout = null;
         this.currentLayout = 'dagre'; // Track current layout
+        this.foundCycles = []; // Store found cycles
         this.init();
     }
 
@@ -152,18 +153,21 @@ class CollatzApp {
         // Input validation and auto-rebuild on every change (with debouncing)
         modulo.addEventListener('input', (e) => {
             if (this.validateAndUpdateModulo(e.target)) {
+                this.clearCyclesList();
                 this.debouncedRebuild();
             }
         });
 
         nValue.addEventListener('input', (e) => {
             if (this.validateAndUpdateN(e.target)) {
+                this.clearCyclesList();
                 this.debouncedRebuild();
             }
         });
 
         mValue.addEventListener('input', (e) => {
             if (this.validateAndUpdateM(e.target)) {
+                this.clearCyclesList();
                 this.debouncedRebuild();
             }
         });
@@ -171,6 +175,7 @@ class CollatzApp {
         shortcut.addEventListener('change', (e) => {
             this.shortcut = e.target.checked;
             this.updateRuleDisplay();
+            this.clearCyclesList();
             this.debouncedRebuildPreserveLayout();
         });
 
@@ -219,6 +224,14 @@ class CollatzApp {
         if (cycleBtn) {
             cycleBtn.addEventListener('click', () => {
                 this.showCycle();
+            });
+        }
+
+        // Search cycles button
+        const searchCyclesBtn = document.getElementById('search-cycles');
+        if (searchCyclesBtn) {
+            searchCyclesBtn.addEventListener('click', () => {
+                this.searchAndDisplayCycles();
             });
         }
 
@@ -1108,6 +1121,106 @@ class CollatzApp {
         this.showNotification(`Cycle path drawn! Click on red line to clear.`, 'success');
     }
 
+    searchAndDisplayCycles() {
+        const range = Math.max(100, this.modulo * 2);
+        const maxValue = Math.max(1000, this.modulo * 10);
+        
+        console.log(`Searching for cycles with N=${this.nValue}, M=${this.mValue}, shortcut=${this.shortcut}, range=±${range}, maxValue=${maxValue}`);
+        
+        this.foundCycles = this.searchCyclesModified(this.nValue, this.mValue, range, maxValue, this.shortcut);
+        
+        console.log('Found cycles:', this.foundCycles);
+        this.displayCycles();
+        this.showNotification(`Found ${this.foundCycles.length} cycles`, 'success');
+    }
+
+    searchCyclesModified(n, m, range, maxValue, useShortcut) {
+        let visited = new Set();
+        let cz = function(x) {
+            if (x % 2 === 0) {
+                return x / 2;
+            } else {
+                if (useShortcut) {
+                    return (n * x + m) / 2;
+                } else {
+                    return n * x + m;
+                }
+            }
+        };
+        let cycles = [];
+        
+        for (let i = -range; i <= range; i++) {
+            if (visited.has(i)) continue;
+            let path = [];
+            let pathSet = new Set();
+            let current = i;
+            
+            while (Math.abs(current) <= maxValue) {
+                if (pathSet.has(current)) {
+                    let cycleStartIndex = path.indexOf(current);
+                    let cycle = path.slice(cycleStartIndex);
+                    let minRep = cycle.reduce((a, b) => (Math.abs(b) < Math.abs(a) ? b : a), cycle[0]);
+                    cycles.push({ start: minRep, cycle: cycle });
+                    break;
+                }
+                if (visited.has(current)) {
+                    break;
+                }
+                path.push(current);
+                pathSet.add(current);
+                visited.add(current);
+                current = cz(current);
+            }
+        }
+        
+        return cycles;
+    }
+
+    displayCycles() {
+        const cyclesList = document.getElementById('cycles-list');
+        if (!cyclesList) return;
+        
+        cyclesList.innerHTML = '';
+        
+        if (this.foundCycles.length === 0) {
+            cyclesList.innerHTML = '<div class="no-cycles">No cycles found</div>';
+            return;
+        }
+
+        this.foundCycles.forEach((cycleData, index) => {
+            const cycleElement = document.createElement('div');
+            cycleElement.className = 'cycle-item';
+            cycleElement.dataset.cycleIndex = index;
+            
+            const first10 = cycleData.cycle.slice(0, 10);
+            const hasMore = cycleData.cycle.length > 10;
+            const displayText = first10.join(', ') + (hasMore ? `, ... (${cycleData.cycle.length} numbers)` : '');
+            
+            cycleElement.innerHTML = `
+                <div class="cycle-start">Start: ${cycleData.start}</div>
+                <div class="cycle-path">${displayText}</div>
+            `;
+            
+            cycleElement.addEventListener('click', () => {
+                this.highlightCycle(cycleData.cycle);
+            });
+            
+            cyclesList.appendChild(cycleElement);
+        });
+    }
+
+    highlightCycle(cycle) {
+        this.drawCyclePath(cycle);
+    }
+
+    clearCyclesList() {
+        this.foundCycles = [];
+        const cyclesList = document.getElementById('cycles-list');
+        if (cyclesList) {
+            cyclesList.innerHTML = '';
+        }
+    }
+
     toggleNodeLabels(show) {
         if (show) {
             this.cy.style().selector('node').style('label', 'data(label)').update();
@@ -1167,6 +1280,44 @@ function makeWFunction(p, n, m) {
     return [table, inverse_table];
 }
 
+function searchCycles(n, m, range, maxValue) {
+    //search for cycles in the collatz process defined by n,m in given range
+    let visited = new Set();
+    let cz = function(x) {
+        if (x % 2 === 0) {
+            return x / 2;
+        } else {
+            return (n * x + m) / 2;
+        }
+    };
+    let cycles = [];
+    for (let i = -range; i <= range; i++) {
+        if (visited.has(i)) continue;
+        let path = [];
+        let pathSet = new Set();
+        let current = i;
+        while (Math.abs(current) <= maxValue) {
+            if (pathSet.has(current)) {
+                //cycle detected
+                let cycleStartIndex = path.indexOf(current);
+                let cycle = path.slice(cycleStartIndex);
+                //cycles.push(cycle);
+                //store just the smallest (by absolute value) representative of the cycle, and its length
+                let minRep = cycle.reduce((a,b) => (Math.abs(b) < Math.abs(a) ? b : a), cycle[0]);
+                cycles.push({ start: minRep, length: cycle.length });
+                break;
+            }
+            if (visited.has(current)) {
+                break; //already processed
+            }
+            path.push(current);
+            pathSet.add(current);
+            visited.add(current);
+            current = cz(current);
+        }
+    }
+    return cycles;
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, creating CollatzApp...');
