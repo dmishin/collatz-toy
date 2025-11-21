@@ -707,11 +707,11 @@ class CollatzApp {
                 if (shortcut) {
                     // j = (N*i + M)/2 % P
                     j = this.mod(Math.floor((N * i + M) / 2), P);
-                    label = `(${N}x+${M})/2`;
+                    label = (M >= 0) ? `(${N}x+${M})/2` : `(${N}x-${-M})/2`;
                 } else {
                     // j = (N*i + M) % P
                     j = this.mod(N * i + M, P);
-                    label = `${N}x+${M}`;
+                    label = (M >= 0) ? `${N}x+${M}` : `${N}x-${-M}`;
                 }
             }
 
@@ -890,8 +890,17 @@ class CollatzApp {
     }
 
     makeSymmetric() {
-        console.log('Making layout centrally symmetric...');
+        console.log('Making layout centrally symmetric, but assuming P is a power of 2. In this case the graph is the De Bruijn graph...');
         
+        let wmap, inv_wmap;
+        try{
+            [wmap, inv_wmap] = makeWFunction(this.modulo, this.nValue, this.mValue);
+            console.log('W function and its inverse:', { wmap, inv_wmap });
+        } catch(e) {
+            alert('Error in making W function: ' + e.message);
+            return;
+        }
+
         const nodes = this.cy.nodes();
         if (nodes.length === 0) return;
         
@@ -912,7 +921,7 @@ class CollatzApp {
         const processedPairs = new Set();
         
         for (let x = 0; x < P; x++) {
-            const partner = (P - 1 - x) % P;
+            const partner = inv_wmap[P - 1 - wmap[x]];
             
             // Skip if we already processed this pair
             const pairKey = `${Math.min(x, partner)}-${Math.max(x, partner)}`;
@@ -1129,6 +1138,35 @@ class CollatzApp {
         }).run();
     }
 }
+
+function makeWFunction(p, n, m) {
+    //create a W function table (modulo P, must be power of 2)
+    //first check that p is power of 2
+    if ((p & (p - 1)) !== 0 || p < 1) {
+        throw new Error('P must be a power of 2');
+    }
+    const table = [];
+    const inverse_table = [];
+    for (let i = 0; i < p; i++) {
+        let j = 0;
+        let digit = 1;// represents current digit weight (1,2,4,8,...)
+        //we calculate steps of shortcut collatz process until bits are exhausted
+        let value = i;
+        while (digit < p){
+            if (value % 2 === 0) {
+                value = value / 2;
+            } else {
+                value = (n * value + m) / 2;
+                j += digit;
+            }
+            digit *= 2;
+        }
+        table[i] = j;
+        inverse_table[j] = i;
+    }
+    return [table, inverse_table];
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, creating CollatzApp...');
