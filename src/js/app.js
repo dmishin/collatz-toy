@@ -1089,9 +1089,11 @@ class CollatzApp {
         // Get node positions and draw lines
         const positions = [];
         for (const num of numbers) {
-            const node = this.cy.getElementById(`n${num}`);
+            // Use mathematical modulo to handle negative numbers correctly
+            const nodeId = this.mod(num, this.modulo);
+            const node = this.cy.getElementById(`n${nodeId}`);
             if (node.length === 0) {
-                alert(`Node ${num} not found in graph.`);
+                alert(`Node ${nodeId} (from ${num}) not found in graph.`);
                 canvas.remove();
                 return;
             }
@@ -1187,7 +1189,10 @@ class CollatzApp {
             return;
         }
 
-        this.foundCycles.forEach((cycleData, index) => {
+        // Sort cycles by starting value: biggest positive to lowest negative
+        const sortedCycles = [...this.foundCycles].sort((a, b) => b.start - a.start);
+
+        sortedCycles.forEach((cycleData, index) => {
             const cycleElement = document.createElement('div');
             cycleElement.className = 'cycle-item';
             cycleElement.dataset.cycleIndex = index;
