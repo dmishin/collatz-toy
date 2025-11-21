@@ -324,3 +324,52 @@ button#clear-graph:hover {
     padding: 1rem;
     font-size: 0.85rem;
 }
+
+/* Display controls layout */
+.display-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.display-controls .checkbox-group {
+    margin-bottom: 0;
+}
+
+.scale-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+.scale-controls span {
+    font-weight: 500;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.scale-controls .layout-btn {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    margin-bottom: 0;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.labels-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.labels-group span {
+    font-weight: 500;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.labels-group .checkbox-group {
+    margin-bottom: 0;
+}
