@@ -235,6 +235,14 @@ class CollatzApp {
             });
         }
 
+        // Show 3D button
+        const show3dBtn = document.getElementById('show-3d');
+        if (show3dBtn) {
+            show3dBtn.addEventListener('click', () => {
+                this.show3D();
+            });
+        }
+
         // Label visibility toggles
         const nodeLabelsCheckbox = document.getElementById('show-node-labels');
         if (nodeLabelsCheckbox) {
@@ -1224,6 +1232,21 @@ class CollatzApp {
         if (cyclesList) {
             cyclesList.innerHTML = '';
         }
+    }
+
+    show3D() {
+        // Prepare current graph data for 3D visualization
+        const graphData = {
+            modulo: this.modulo,
+            nValue: this.nValue,
+            mValue: this.mValue,
+            shortcut: this.shortcut
+        };
+        
+        // Encode the graph data and open 3D view in new window
+        const encodedData = btoa(JSON.stringify(graphData));
+        const url3D = `3d.html?data=${encodedData}`;
+        window.open(url3D, '_blank', 'width=1200,height=800');
     }
 
     toggleNodeLabels(show) {
