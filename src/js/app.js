@@ -332,6 +332,7 @@ class CollatzApp {
             { id: 'layout-concentric', layout: 'concentric' },
             { id: 'layout-cose', layout: 'cose' },
             { id: 'layout-breadthfirst', layout: 'breadthfirst' },
+            { id: 'layout-spectral', layout: 'spectral' },
             { id: 'layout-random', layout: 'random' }
         ];
 
@@ -395,6 +396,13 @@ class CollatzApp {
                 };
             case 'breadthfirst':
                 return { ...baseConfig, name: 'breadthfirst', directed: true, spacingFactor: 1.5, maximal: false };
+            case 'spectral':
+                return {
+                    ...baseConfig, name: 'cose', idealEdgeLength: 80, nodeOverlap: 10, refresh: 30,
+                    randomize: true, componentSpacing: 80, nodeRepulsion: 800000, edgeElasticity: 200,
+                    nestingFactor: 1, gravity: 40, numIter: 2000, initialTemp: 400, coolingFactor: 0.99,
+                    minTemp: 5.0, animate: animated ? 'end' : false
+                };
             case 'random':
                 return { ...baseConfig, name: 'random' };
             default:
