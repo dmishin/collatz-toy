@@ -8,6 +8,7 @@ class CollatzApp {
         this.nValue = 3;
         this.mValue = 1;
         this.shortcut = false;
+        this.excludeMultiplesOf3 = false;
         this.rebuildTimeout = null;
         this.currentLayout = 'dagre'; // Track current layout
         this.foundCycles = []; // Store found cycles
@@ -179,6 +180,15 @@ class CollatzApp {
             this.debouncedRebuildPreserveLayout();
         });
 
+        const excludeMultiplesOf3 = document.getElementById('exclude-multiples-of-3');
+        if (excludeMultiplesOf3) {
+            excludeMultiplesOf3.addEventListener('change', (e) => {
+                this.excludeMultiplesOf3 = e.target.checked;
+                this.clearCyclesList();
+                this.debouncedRebuild();
+            });
+        }
+
         // Export link button
         const exportBtn = document.getElementById('export-link');
         if (exportBtn) {
@@ -306,8 +316,9 @@ class CollatzApp {
         // Layout button event listeners
         this.bindLayoutButtons();
 
-        // Initialize validation
+        // Initialize validation and checkbox states
         this.validateAllInputs();
+        this.updateExcludeMultiplesOf3Checkbox();
     }
 
     debouncedRebuild() {
@@ -448,7 +459,8 @@ class CollatzApp {
             P: this.modulo,
             N: this.nValue,
             M: this.mValue,
-            shortcut: this.shortcut
+            shortcut: this.shortcut,
+            excludeMultiplesOf3: this.excludeMultiplesOf3
         };
         
         // Get node positions
@@ -550,9 +562,14 @@ class CollatzApp {
                 this.shortcut = data.shortcut;
                 document.getElementById('shortcut').checked = data.shortcut;
             }
+            if (data.excludeMultiplesOf3 !== undefined) {
+                this.excludeMultiplesOf3 = data.excludeMultiplesOf3;
+                document.getElementById('exclude-multiples-of-3').checked = data.excludeMultiplesOf3;
+            }
             
-            // Update rule display
+            // Update rule display and checkbox states
             this.updateRuleDisplay();
+            this.updateExcludeMultiplesOf3Checkbox();
             
             // Rebuild graph with new parameters, but skip automatic layout if we have positions
             this.buildGraph(this.modulo, this.nValue, this.mValue, this.shortcut, data.positions);
@@ -621,7 +638,11 @@ class CollatzApp {
     }
 
     validateAndUpdateModulo(input) {
-        return this.validateInput(input, (v) => v >= 1, 'Must be a positive integer', 'modulo', 'modulo-error');
+        const isValid = this.validateInput(input, (v) => v >= 1, 'Must be a positive integer', 'modulo', 'modulo-error');
+        if (isValid) {
+            this.updateExcludeMultiplesOf3Checkbox();
+        }
+        return isValid;
     }
 
     validateAndUpdateN(input) {
@@ -638,6 +659,17 @@ class CollatzApp {
         const mValid = this.validateAndUpdateM(document.getElementById('m-value'));
         
         return moduloValid && nValid && mValid;
+    }
+
+    updateExcludeMultiplesOf3Checkbox() {
+        const checkbox = document.getElementById('exclude-multiples-of-3');
+        if (checkbox) {
+            const isDivisibleBy3 = this.modulo % 3 === 0;
+            checkbox.disabled = !isDivisibleBy3;
+            
+            // Don't change the checkbox state, just disable/enable it
+            // The buildGraph method will check both conditions
+        }
     }
 
     updateRuleDisplay() {
@@ -724,6 +756,11 @@ class CollatzApp {
 
         // Create nodes for i ranging from 0 to P-1
         for (let i = 0; i < P; i++) {
+            // Skip nodes divisible by 3 if the option is enabled AND P is divisible by 3
+            if (this.excludeMultiplesOf3 && P % 3 === 0 && i % 3 === 0) {
+                continue;
+            }
+            
             let nodeClass = '';
             
             if (P % 2 === 1) {
@@ -776,6 +813,13 @@ class CollatzApp {
 
             const sourceNode = this.mod(i, P);  // Source node is i mod P
             const targetNode = j;      // Target node is calculated j
+            
+            // Skip edges if either source or target node is excluded
+            if (this.excludeMultiplesOf3 && P % 3 === 0) {
+                if (sourceNode % 3 === 0 || targetNode % 3 === 0) {
+                    continue;
+                }
+            }
             
             // Create unique key for this edge (source-target-label)
             const edgeKey = `${sourceNode}-${targetNode}-${label}`;
@@ -1354,7 +1398,8 @@ class CollatzApp {
             modulo: this.modulo,
             nValue: this.nValue,
             mValue: this.mValue,
-            shortcut: this.shortcut
+            shortcut: this.shortcut,
+            excludeMultiplesOf3: this.excludeMultiplesOf3
         };
         
         // Encode the graph data and open 3D view in new window

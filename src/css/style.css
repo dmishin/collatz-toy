@@ -116,6 +116,11 @@ body {
     font-size: 0.9rem;
 }
 
+.checkbox-group input[type="checkbox"]:disabled + label {
+    color: #bbb;
+    cursor: not-allowed;
+}
+
 button {
     width: 100%;
     padding: 0.6rem;
