@@ -336,7 +336,9 @@ button#clear-graph:hover {
     margin-bottom: 0;
 }
 
-.scale-controls {
+.scale-controls,
+.transform-controls,
+.flip-controls {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -349,7 +351,9 @@ button#clear-graph:hover {
     font-size: 0.9rem;
 }
 
-.scale-controls .layout-btn {
+.scale-controls .layout-btn,
+.transform-controls .layout-btn,
+.flip-controls .layout-btn {
     width: 30px;
     height: 30px;
     padding: 0;

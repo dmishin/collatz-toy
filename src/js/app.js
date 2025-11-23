@@ -273,6 +273,36 @@ class CollatzApp {
             });
         }
 
+        // Rotation buttons
+        const rotateCwBtn = document.getElementById('rotate-cw');
+        if (rotateCwBtn) {
+            rotateCwBtn.addEventListener('click', () => {
+                this.rotateLayout(10);
+            });
+        }
+
+        const rotateCcwBtn = document.getElementById('rotate-ccw');
+        if (rotateCcwBtn) {
+            rotateCcwBtn.addEventListener('click', () => {
+                this.rotateLayout(-10);
+            });
+        }
+
+        // Flip buttons
+        const flipHorizontalBtn = document.getElementById('flip-horizontal');
+        if (flipHorizontalBtn) {
+            flipHorizontalBtn.addEventListener('click', () => {
+                this.flipLayout('horizontal');
+            });
+        }
+
+        const flipVerticalBtn = document.getElementById('flip-vertical');
+        if (flipVerticalBtn) {
+            flipVerticalBtn.addEventListener('click', () => {
+                this.flipLayout('vertical');
+            });
+        }
+
         // Layout button event listeners
         this.bindLayoutButtons();
 
@@ -916,6 +946,82 @@ class CollatzApp {
         this.cy.fit();
         
         this.showNotification(`Layout scaled ${factor > 1 ? 'up' : 'down'}!`, 'success');
+    }
+
+    rotateLayout(degrees) {
+        console.log(`Rotating layout by ${degrees} degrees`);
+        
+        const nodes = this.cy.nodes();
+        if (nodes.length === 0) return;
+        
+        // Get center point of current layout
+        let centerX = 0, centerY = 0;
+        nodes.forEach(node => {
+            const pos = node.position();
+            centerX += pos.x;
+            centerY += pos.y;
+        });
+        centerX /= nodes.length;
+        centerY /= nodes.length;
+        
+        // Convert degrees to radians
+        const radians = degrees * Math.PI / 180;
+        const cos = Math.cos(radians);
+        const sin = Math.sin(radians);
+        
+        // Rotate each node's position around the center
+        nodes.forEach(node => {
+            const pos = node.position();
+            const relativeX = pos.x - centerX;
+            const relativeY = pos.y - centerY;
+            
+            const newX = centerX + (relativeX * cos - relativeY * sin);
+            const newY = centerY + (relativeX * sin + relativeY * cos);
+            
+            node.position({ x: newX, y: newY });
+        });
+        
+        // Fit the graph to show all nodes after rotation
+        this.cy.fit();
+        
+        this.showNotification(`Layout rotated ${degrees}° ${degrees > 0 ? 'CW' : 'CCW'}!`, 'success');
+    }
+
+    flipLayout(direction) {
+        console.log(`Flipping layout ${direction}`);
+        
+        const nodes = this.cy.nodes();
+        if (nodes.length === 0) return;
+        
+        // Get center point of current layout
+        let centerX = 0, centerY = 0;
+        nodes.forEach(node => {
+            const pos = node.position();
+            centerX += pos.x;
+            centerY += pos.y;
+        });
+        centerX /= nodes.length;
+        centerY /= nodes.length;
+        
+        // Flip each node's position around the center
+        nodes.forEach(node => {
+            const pos = node.position();
+            let newX = pos.x;
+            let newY = pos.y;
+            
+            if (direction === 'horizontal') {
+                newX = centerX + (centerX - pos.x);
+            } else if (direction === 'vertical') {
+                newY = centerY + (centerY - pos.y);
+            }
+            
+            node.position({ x: newX, y: newY });
+        });
+        
+        // Fit the graph to show all nodes after flipping
+        this.cy.fit();
+        
+        this.showNotification(`Layout flipped ${direction}!`, 'success');
     }
 
     makeSymmetric() {
