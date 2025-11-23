@@ -1,35 +1,74 @@
 # Collatz mod P - Interactive Graph Visualizer
 
-An interactive web application for visualizing generalized Collatz processes modulo P as directed graphs. Explore how different parameters (N, M, shortcut) affect the structure of these mathematical sequences.
+An interactive web application for visualizing generalized [Collatz processes](https://en.wikipedia.org/wiki/Collatz_conjecture) modulo P as directed graphs. This tool explores how different parameters (N, M, shortcut) affect the structure of these fascinating mathematical sequences.
 
-## 🌐 Live Demo
+## What is it?
 
-**Try it online:** [https://dmishin.github.io/collatz-toy/](https://dmishin.github.io/collatz-toy/)
+This application generalizes the famous [Collatz conjecture](https://en.wikipedia.org/wiki/Collatz_conjecture) by allowing custom parameters and visualizing the resulting [directed graph](https://en.wikipedia.org/wiki/Directed_graph) modulo P.
 
-## 📖 What is it?
+### Mathematical Background
 
-This application generalizes the famous [Collatz conjecture](https://en.wikipedia.org/wiki/Collatz_conjecture) by allowing custom parameters:
-- **Standard Collatz**: If odd, multiply by 3 and add 1; if even, divide by 2
-- **Generalized**: If odd, multiply by N and add M; if even, divide by 2
-- **Modular arithmetic**: All operations performed modulo P
+The standard Collatz conjecture involves iterating the function:
+- If x is even: x → x/2  
+- If x is odd: x → 3x + 1
 
-The visualization shows how numbers flow between residue classes, revealing cycles, attractors, and mathematical structures.
+This application generalizes this to **Nx + M** for odd numbers and visualizes the resulting dynamics on [residue classes](https://en.wikipedia.org/wiki/Modular_arithmetic) modulo P.
 
-## ✨ Features
+The generalized Collatz function is:
+```
+f(x) = { x/2           if x ≡ 0 (mod 2)
+       { Nx + M        if x ≡ 1 (mod 2)
+```
 
-- **Interactive 2D graph** with multiple layout algorithms
-- **3D visualization** for exploring complex structures  
-- **Cycle detection** and highlighting
-- **Parameter manipulation** tools (double/halve modulo, symmetrize)
-- **Export capabilities** (PNG images, shareable links)
-- **Real-time updates** as you change parameters
-- **Responsive design** works on desktop and mobile
+With optional "shortcut" mode:
+```
+f(x) = { x/2           if x ≡ 0 (mod 2)  
+       { (Nx + M)/2    if x ≡ 1 (mod 2)
+```
 
-## 🤖 Development Note
+### Graph Interpretation
 
-This project was created almost entirely through AI-assisted development using **Claude (Anthropic)**. The mathematical concepts, UI design, interactive features, and 3D visualization were all implemented through natural language conversations with the AI assistant.
+- **Nodes**: Represent [residue classes](https://en.wikipedia.org/wiki/Equivalence_class) modulo P, labeled 0 to P-1. Each node [i] represents all integers congruent to i modulo P.
+- **Edges**: Represent function transitions between residue classes according to the generalized Collatz rules.
+- **Solid edges**: Transitions from odd residue classes via Nx + M (or (Nx + M)/2 if shortcut is enabled)
+- **Dashed edges**: Transitions from even residue classes via x/2
 
-## 🚀 Build Instructions
+### Node Colors (Parity Indication)
+- **When P is odd**: All nodes are grey (parity is not well-defined since both even and odd numbers can belong to the same residue class)
+- **When P is even**:
+  - **White nodes**: Even residue classes (contain only even numbers)
+  - **Black nodes**: Odd residue classes (contain only odd numbers)
+
+## Parameters
+
+- **Modulo (P)**: The modular arithmetic base. All calculations are done modulo P.
+- **N**: Multiplier for odd numbers (must be odd to ensure the function is well-defined)
+- **M**: Additive constant for odd numbers (must be odd to ensure odd numbers map to even numbers)  
+- **Shortcut**: When enabled, applies **(Nx + M)/2** instead of **Nx + M** for odd numbers. This simulates the "shortcut" optimization used in Collatz analysis, where since Nx + M is always even (when x is odd and N,M are odd), we can immediately divide by 2.
+
+## Features
+
+### Interactive Visualization
+- **2D Graph**: Multiple layout algorithms (Dagre, Circle, Grid, Concentric, Force-Directed, Breadth-First, Spectral, Random)
+- **3D Visualization**: Explore complex structures in three dimensions
+- **Layout Controls**: Scale, rotate (10° increments), and flip graphs horizontally/vertically
+- **Real-time Updates**: Graph rebuilds automatically as you change parameters
+
+### Cycle Analysis
+- **Search**: Find cycles in the current Collatz process
+- **Click Cycle**: Highlight cycle paths on the graph
+- **Show Cycle**: Manually input and highlight specific cycles
+
+### Manipulation Tools
+- **P→2P**: Double the modulo while preserving layout
+- **2P→P**: Halve the modulo (P must be even)
+- **Symmetrize**: Apply central symmetry (requires P to be a power of 2)
+- **Export**: Save as PNG images or create shareable links
+
+### Special Cases
+When P is a power of 2, the graph becomes a [De Bruijn graph](https://en.wikipedia.org/wiki/De_Bruijn_graph), and the symmetrize function applies a special transformation based on binary representations.
+
+## Building and Running
 
 ### Prerequisites
 - [Node.js](https://nodejs.org/) (version 14 or higher)
@@ -73,7 +112,7 @@ dist/
     └── style-[hash].css
 ```
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 - **Frontend**: Vanilla JavaScript (ES6+)
 - **2D Graphs**: [Cytoscape.js](https://cytoscape.org/) with Dagre layout
@@ -81,26 +120,10 @@ dist/
 - **Build Tool**: [Vite](https://vitejs.dev/)
 - **Math**: MathML for formula rendering
 
-## 🧮 Mathematical Background
+## License
 
-The application explores the dynamics of the generalized Collatz function:
-```
-f(x) = { x/2           if x ≡ 0 (mod 2)
-       { Nx + M        if x ≡ 1 (mod 2)
-```
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-With optional "shortcut" mode:
-```
-f(x) = { x/2           if x ≡ 0 (mod 2)  
-       { (Nx + M)/2    if x ≡ 1 (mod 2)
-```
+## Contributing
 
-All operations are performed modulo P, creating finite directed graphs that reveal the underlying structure of these sequences.
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) file for details.
-
-## 🤝 Contributing
-
-While this was primarily an AI-assisted development experiment, contributions are welcome! Please feel free to open issues or submit pull requests.
+Contributions are welcome! Please feel free to open issues or submit pull requests.
