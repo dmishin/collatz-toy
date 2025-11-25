@@ -1,6 +1,7 @@
 # Collatz mod P - Interactive Graph Visualizer
 
 An interactive web application for visualizing generalized [Collatz processes](https://en.wikipedia.org/wiki/Collatz_conjecture) modulo P as directed graphs. This tool explores how different parameters (N, M, shortcut) affect the structure of these fascinating mathematical sequences.
+See it live here: https://dmishin.github.io/collatz-toy/
 
 ## What is it?
 
